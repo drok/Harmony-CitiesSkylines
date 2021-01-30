@@ -28,6 +28,9 @@ namespace CitiesHarmony {
                 // This should be done before we use harmony because harmony itself needs assembly resolver.
                 Resolver.InstallHarmonyResolver();
 
+                // by this point all of the assemblies must have been loaded as RO.
+                AssemblyScanner.VerifyAllROAssemblies(); 
+
                 var harmony = new Harmony("CitiesHarmony");
 
                 // Self-patch Harmony 1.x assemblies

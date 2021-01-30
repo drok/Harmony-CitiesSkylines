@@ -6,19 +6,26 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace CitiesHarmony.API {
+namespace CitiesHarmony {
     public class CMPatch : IPatch {
         public int PatchOrderAsc { get; } = 1000;
         public AssemblyToPatch PatchTarget { get; } = new AssemblyToPatch("ColossalManaged", new Version());
         private ILogger logger_;
         private string workingPath_;
         private static Version MIN_HARMONY1_VERSION = new Version(1, 1, 0, 0);
-        private static string HARMONY1_NAME = "0Harmony";
+        private static Version MIN_HARMONY2_VERSION = new Version(2, 0, 0, 8);
+        private static Version V2 = new Version(2, 0);
+        private static string HARMONY_NAME = "0Harmony";
 
         public AssemblyDefinition Execute(AssemblyDefinition assemblyDefinition, ILogger logger, string patcherWorkingPath) {
             logger_ = logger;
             workingPath_ = patcherWorkingPath;
-            LoadDLL(Path.Combine(workingPath_, "0Harmony1.2.0.1.dll"));
+
+            //LoadDLL(Path.Combine(workingPath_, "0Harmony.dll"));
+            //var citiesHarmony = LoadDLL(Path.Combine(workingPath_, "CitiesHarmony.dll"));
+            //citiesHarmony.GetType(nameof(Installer)).GetMethod(nameof(Installer.Run)).Invoke(null,null);
+            Installer.Run();
+
             LoadPluginPatch(assemblyDefinition);
             return assemblyDefinition;
         }
@@ -35,10 +42,8 @@ namespace CitiesHarmony.API {
         }
 
         /// <summary>
-        /// patch LoadPlugin to replace old harmony libraries with harmony 1.2.0.1
-        /// this will provide better backward compatiblity even with very old mods.
+        /// scan for direcy harmony usage and put error log on screen.
         /// </summary>
-        /// <param name="CM"></param>
         void LoadPluginPatch(AssemblyDefinition CM) {
             logger_.Info("LoadPluginPatch() called ...");
             var module = CM.MainModule;
@@ -50,30 +55,18 @@ namespace CitiesHarmony.API {
 
             Instruction first = instructions.First(); // first instruction of the original method
             Instruction loadDllPath = Instruction.Create(OpCodes.Ldarg_1);
-            MethodInfo mIsOldHarmony = GetType().GetMethod(nameof(IsOldHarmony));
-            Instruction callIsOldHarmony = Instruction.Create(OpCodes.Call, module.ImportReference(mIsOldHarmony));
+            MethodInfo mVerifyDll = typeof(AssemblyScanner).GetMethod(nameof(AssemblyScanner.VerifyDll));
+            Instruction callVerifyDll = Instruction.Create(OpCodes.Call, module.ImportReference(mVerifyDll));
             Instruction branchToFirst = Instruction.Create(OpCodes.Brfalse, first);
             Instruction loadNull = Instruction.Create(OpCodes.Ldnull);
             Instruction ret = Instruction.Create(OpCodes.Ret);
 
-            /* 
-            if(IsOldHarmony(dllPath))
-                return null;
-            [ first instruction of the original method ]
-            [ rest of the instructions ]
-            */
+
+            // VerifyDll(dllPath)
             ilProcessor.InsertBefore(first, loadDllPath);
-            ilProcessor.InsertAfter(loadDllPath, callIsOldHarmony);
-            ilProcessor.InsertAfter(callIsOldHarmony, branchToFirst);
-            ilProcessor.InsertAfter(branchToFirst, loadNull);
-            ilProcessor.InsertAfter(loadNull, ret); // return null
+            ilProcessor.InsertAfter(loadDllPath, callVerifyDll);
 
             logger_.Info("LoadPluginPatch() succeeded!");
-        }
-
-        public static bool IsOldHarmony(string path) {
-            var asm = AssemblyDefinition.ReadAssembly(path);
-            return asm.Name.Name == HARMONY1_NAME && asm.Name.Version < MIN_HARMONY1_VERSION;
         }
 
     }
