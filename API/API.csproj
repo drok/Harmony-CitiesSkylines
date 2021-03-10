@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ProjectGuid>{A3462C5B-B9A4-4154-9855-F3025E943946}</ProjectGuid>
+    <Deterministic>false</Deterministic>
+    <TargetFramework>net35</TargetFramework>
+    <AssemblyTitle>Lib.Harmony Helper for Cities: Skylines</AssemblyTitle>
+    <Company>Radu Hociung</Company>
+    <Description>Auto-installs and gives access to the Harmony Mod from the Steam Workshop</Description>
+    <Copyright>Copyright 2021 Radu Hociung</Copyright>
+    <Version>0.9.0</Version>
+    <Authors>Radu Hociung</Authors>
+    <PackageId>Harmony-CitiesSkylines</PackageId>
+    <PackageProjectUrl>https://github.com/drok/Harmony-CitiesSkylines</PackageProjectUrl>
+    <PackageReleaseNotes>This is a drop-in replacement for CitiesHarmony.API by boformer, which subscribes the new Harmony Mod instead of boformer's</PackageReleaseNotes>
+    <PackageTags>Games Modding Patching</PackageTags>
+    <PackageIcon>package_icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+		<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+		<GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+		<GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+		<GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+		<GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+		<AssemblyName>Harmony-CitiesSkylines</AssemblyName>
+  </PropertyGroup>
+	<PropertyGroup>
+		<DelaySign>false</DelaySign>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+		<UserSecretsId>631fdc66-d970-44a9-9df3-895a0745b50e</UserSecretsId>
+	</PropertyGroup>
+	<ItemGroup>
+    <None Include="package_icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ColossalManaged">
+      <HintPath>C:\References\ColossalManaged.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="IAmAware">
+      <HintPath>C:\References\IAmAware-0.0.0.0.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ICities">
+      <HintPath>C:\References\ICities.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>C:\References\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+	<PackageReference Include="Lib.Harmony" Version="2.0.4">
+	    <ExcludeAssets>runtime</ExcludeAssets>
+	</PackageReference>
+  </ItemGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+</Project>

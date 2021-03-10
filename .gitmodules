@@ -1,0 +1,20 @@
+[submodule "Harmony-v2"]
+	path = Harmony-v2
+	url = https://github.com/drok/Harmony
+	branch = maintenance-v2
+[submodule "Compat-Harmony-2.0.0.9"]
+	path = Compat-Harmony-2.0.0.9
+	url = https://github.com/drok/Harmony
+	branch = maintenance-2.0.0.9
+[submodule "Compat-Harmony-2.0.1.0"]
+	path = Compat-Harmony-2.0.1.0
+	url = https://github.com/drok/Harmony
+	branch = maintenance-2.0.1.0
+[submodule "Compat-CitiesHarmony.Harmony-2.0.4.0"]
+	path = Compat-CitiesHarmony.Harmony-2.0.4.0
+	url = https://github.com/drok/Harmony
+	branch = maintenance-CitiesHarmony.Harmony-2.0.4.0
+[submodule "MonoMod.Common"]
+	path = MonoMod.Common
+	url = https://github.com/drok/MonoMod.Common
+	branch = maintenance-Harmony-CitiesSkylines

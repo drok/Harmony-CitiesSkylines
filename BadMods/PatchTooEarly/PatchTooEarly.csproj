@@ -1,12 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ProjectGuid>{961A70CE-8B6C-4950-A845-E215F07D0CC2}</ProjectGuid>
+    <ProjectGuid>{EBC32B21-119F-4D23-9B31-61B4DEFFC16F}</ProjectGuid>
     <TargetFramework>net35</TargetFramework>
     <Deterministic>false</Deterministic>
     <AssemblyTitle>ExampleMod</AssemblyTitle>
     <AssemblyVersion>1.0.*</AssemblyVersion>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -27,7 +26,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CitiesHarmony.API" Version="2.0.0-rc" />
+    <PackageReference Include="CitiesHarmony.API" Version="1.0.6" />
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>none</DebugType>

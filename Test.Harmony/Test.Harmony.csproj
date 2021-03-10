@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ProjectGuid>{47363338-1B57-467C-93B9-DD9FB293AF27}</ProjectGuid>
+    <TargetFramework>net35</TargetFramework>
+    <Deterministic>false</Deterministic>
+    <AssemblyTitle>Test.Harmony</AssemblyTitle>
+    <AssemblyVersion>1.0.*</AssemblyVersion>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <Configurations>1.0.3;1.0.4;1.0.5;1.0.6;2.0.0</Configurations>
+  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'!='Debug'">
+		<DelaySign>false</DelaySign>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'!='Release'">
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CitiesHarmony.API" Version="$(Configuration)" />
+	</ItemGroup>
+
+	<ItemGroup Condition="">
+		<PackageReference Include="CitiesHarmony.API" Version="$(Configuration)" />
+	</ItemGroup>
+
+	<ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ColossalManaged">
+      <HintPath>C:\References\ColossalManaged.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ICities">
+      <HintPath>C:\References\ICities.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>C:\References\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="DeployToModDirectory" AfterTargets="Build">
+    <PropertyGroup>
+		<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(ProjectName)-$(Configuration)\</ModDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <ModFiles Include="$(TargetDir)*.*" />
+    </ItemGroup>
+	  <!-- <RemoveDir Directories="$(ModDirectory)" /> -->
+	  <Delete Files="$(ModDirectory)$(TargetFileName)" TreatErrorsAsWarnings="true" />
+	  <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModDirectory)" />
+  </Target>
+</Project>

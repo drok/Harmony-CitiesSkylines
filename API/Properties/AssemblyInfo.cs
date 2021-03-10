@@ -1,0 +1,5 @@
+﻿[assembly: System.Reflection.AssemblyCompanyAttribute("Radu Hociung")]
+[assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright 2021 Radu Hociung")]
+[assembly: System.Reflection.AssemblyDescriptionAttribute("Auto-installs and gives access to the Harmony Mod from the Steam Workshop")]
+[assembly: System.Reflection.AssemblyProductAttribute("Harmony.API")]
+[assembly: System.Reflection.AssemblyTitleAttribute("Lib.Harmony Helper for Cities: Skylines")]
