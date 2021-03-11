@@ -778,6 +778,8 @@ namespace HarmonyMod
                     } else
                     {
                         optionsButton.text = m_optionsButtonOriginalText;
+                        optionsButton.eventClick += entry.OpenOptions;
+                        optionsButton.eventClick -= ShowReport;
                     }
                 }
             }
