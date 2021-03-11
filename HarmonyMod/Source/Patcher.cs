@@ -73,7 +73,7 @@ namespace HarmonyMod
                 Harmony.Harmony1Patched = true;
                 try
                 {
-                    ImplementAdditionalVersionSupport(false);
+                    ImplementAdditionalVersionSupport(true);
                 }
                 catch (HarmonyModSupportException ex)
                 {

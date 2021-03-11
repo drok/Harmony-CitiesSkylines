@@ -125,18 +125,16 @@ namespace HarmonyMod {
                 {
                     HarmonyInstance_Unpatch.Invoke(oldInstance, new object[] { method, HarmonyPatchType_All, null });
                 }
-            // Reset is not needed while we are using a Harmony 2 fork that uses a different assembly name!
-            /*
-            // Reset shared state
-            var sharedStateAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("HarmonySharedState"));
-            if (sharedStateAssembly != null) {
-                var stateField = sharedStateAssembly.GetType("HarmonySharedState")?.GetField("state");
-                if (stateField != null) {
-                    UnityEngine.Debug.Log("Resetting HarmonySharedState...");
-                    stateField.SetValue(null, null);
+
+                // Reset shared state
+                var sharedStateAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name.Contains("HarmonySharedState"));
+                if (sharedStateAssembly != null) {
+                    var stateField = sharedStateAssembly.GetType("HarmonySharedState")?.GetField("state");
+                    if (stateField != null) {
+                        UnityEngine.Debug.Log("Resetting HarmonySharedState...");
+                        stateField.SetValue(null, null);
+                    }
                 }
-            }
-            */
 
                 // Apply patches using Harmony 2.x
                 foreach (var processor in processors) {
