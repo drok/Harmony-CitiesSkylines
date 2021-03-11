@@ -43,6 +43,10 @@ namespace HarmonyMod
 
         bool m_usesHarmony;
 
+        internal string Name { get; set; }
+        internal string Description { get; set; }
+        internal string  modType { get; set; }
+
         internal enum ProblemType
         {
             /* These should be listed in order of importance, highest to lowest,
@@ -129,6 +133,29 @@ namespace HarmonyMod
             m_numProblemsCaused += report.numProblemsCaused;
         }
 
+        internal void CacheModInfo()
+        {
+            if (plugin.assemblyCount == 0)
+            {
+                var modDir = new System.IO.DirectoryInfo(plugin.modPath);
+                Name = modDir.Name;
+                modType = plugin.name;
+                Description = plugin.name;
+            }
+            else if (plugin.userModInstance is not null)
+            {
+                modType = plugin.userModInstance.GetType().Namespace;
+                Name = (plugin.userModInstance as IUserMod).Name;
+                Description = (plugin.userModInstance as IUserMod).Description;
+            }
+            else
+            {
+                modType = "unknown";
+                Name = "unknown";
+                Description = "unknown";
+            }
+        }
+
         internal void ReportUnsupportedHarmony(HarmonyModSupportException e)
         {
             SameAssemblyName sameName = new SameAssemblyName();
@@ -202,28 +229,6 @@ namespace HarmonyMod
                 }
             }
 
-            string modType;
-            if (plugin.assemblyCount == 0)
-            {
-                modType = plugin.name;
-            } else
-            {
-                modType = plugin.userModInstance.GetType().Namespace;
-            }
-            if (modType.Length > 30) modType = modType.Remove(30);
-
-            string modName;
-            if (plugin.assemblyCount == 0)
-            {
-                var modDir = new System.IO.DirectoryInfo(plugin.modPath);
-                modName = modDir.Name;
-            }
-            else
-            {
-                modName = (plugin.userModInstance as IUserMod).Name;
-            }
-            if (modName.Length > 30) modName = modName.Remove(30);
-
             string harmonyVer = needsHarmony != null ? $"0H: {needsHarmony.ToString()}" :
                                 needsNewHarmony != null ? $"CH: {needsNewHarmony.ToString()}" : string.Empty;
             string harmonyAPI = needsHarmonyAPI != null ? needsHarmonyAPI.ToString() : string.Empty;
@@ -247,7 +252,7 @@ namespace HarmonyMod
                         summaryLines += " <ul>" + problems + missingAssembliesStr + "</ul>";
                     }
 
-                    summaryLines += $" | {modName.Max(31)} | ";
+                    summaryLines += $" | {Name.Max(31)} | ";
                     if (!string.IsNullOrEmpty(harmonyVer))
                         summaryLines += $"`{harmonyVer}`";
                     summaryLines += " | ";
@@ -258,7 +263,7 @@ namespace HarmonyMod
                     break;
                 default:
                     problems = ProblemSummary(reportFormat, "                   [ERR] ", brief ? Report.MAX_PROBLEMS_PER_TYPE_IN_DISPLAY : Report.MAX_PROBLEMS_PER_TYPE_IN_LOG);
-                    summaryLines = $"{strEnabled} {location.Max(23),-24} {modType.Max(31),-32} {modName.Max(31),-32} {harmonyVer,-14} {harmonyAPI,-10}\n";
+                    summaryLines = $"{strEnabled} {location.Max(23),-24} {modType.Max(31),-32} {Name.Max(31),-32} {harmonyVer,-14} {harmonyAPI,-10}\n";
                     summaryLines += problems + missingAssembliesStr;
                     break;
             }
@@ -357,7 +362,7 @@ namespace HarmonyMod
                             try
                             {
                                 var p = Singleton<PluginManager>.instance.GetPluginsInfo().First((x) => x.ContainsAssembly(assembly));
-                                conflictingPlugin = $"{(p.userModInstance as IUserMod).Name} ({p.name}, {(p.publishedFileID == PublishedFileId.invalid ? "local" : "workshop")})";
+                                conflictingPlugin = $"{(p.userModInstance as IUserMod)?.Name} ({p.name}, {(p.publishedFileID == PublishedFileId.invalid ? "local" : "workshop")})";
 
                             }
                             catch (InvalidOperationException)
@@ -389,7 +394,7 @@ namespace HarmonyMod
         }
 
 
-internal string ListMissingAssemblies(Report.ReportFormat reportFormat)
+        internal string ListMissingAssemblies(Report.ReportFormat reportFormat)
         {
             string str = string.Empty;
 

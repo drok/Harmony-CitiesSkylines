@@ -436,10 +436,21 @@ namespace HarmonyMod
                     }
                 });
         }
-
-        void UpdateReport()
+        internal void OnModsLoaded()
         {
-            // UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.UpdateReport()");
+            Singleton<PluginManager>.instance.GetPluginsInfo()
+                .Where((p) => !p.isBuiltin)
+                .Do((p) =>
+                {
+                    GetReport(p).CacheModInfo();
+                });
+        }
+
+            void UpdateReport()
+        {
+#if HEAVY_TRACE
+            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.UpdateReport()");
+#endif
 
             if (reportPanel != null && reportPanel.component.isVisible)
             {
@@ -559,6 +570,7 @@ namespace HarmonyMod
             CheckConflicts();
 
             Singleton<PluginManager>.instance.eventPluginsChanged += UpdateReport;
+            Singleton<LoadingManager>.instance.m_introLoaded += OnModsLoaded;
 
             try
             {
@@ -603,6 +615,7 @@ namespace HarmonyMod
             try
             {
                 Singleton<PluginManager>.instance.eventPluginsChanged -= UpdateReport;
+                Singleton<LoadingManager>.instance.m_introLoaded -= OnModsLoaded;
 
                 OutputReport(self.userModInstance as Mod, true);
 
