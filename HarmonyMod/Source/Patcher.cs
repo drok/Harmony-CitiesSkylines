@@ -101,6 +101,9 @@ namespace HarmonyMod
             Harmony2009::HarmonyLib.Harmony.isEnabled = true;
             Harmony2010::HarmonyLib.Harmony.isEnabled = true;
             HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = true;
+            if (!Harmony.harmonyUsers.ContainsKey(Assembly.GetExecutingAssembly().FullName)) {
+                Harmony.harmonyUsers[Assembly.GetExecutingAssembly().FullName] = new Harmony.HarmonyUser() { checkBeforeUse = true, legacyCaller = false, instancesCreated = 0, };
+            }
 
             return wasInitialized;
         }
@@ -293,6 +296,13 @@ namespace HarmonyMod
                 Harmony.unsupportedException = new HarmonyModSupportException(unsupportedAssemblies);
                 throw Harmony.unsupportedException;
             }
+        }
+        internal static bool isHarmonyUserException(Exception e)
+        {
+            return e is Harmony2.HarmonyLib.HarmonyUserException ||
+                e is Harmony2009::HarmonyLib.HarmonyUserException ||
+                e is Harmony2010::HarmonyLib.HarmonyUserException ||
+                e is HarmonyCHH2040::HarmonyLib.HarmonyUserException;
         }
 
     }

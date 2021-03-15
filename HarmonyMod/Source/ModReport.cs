@@ -426,6 +426,11 @@ namespace HarmonyMod
         {
             string circumstance = detail ?? Report.ExMessage(e, false);
 
+            if (!string.IsNullOrEmpty(e.HelpLink))
+            {
+                circumstance += " (see " + e.HelpLink + ")";
+            }
+
             /* e may be null */
             if (problem == ProblemType.ExceptionThrown)
             {
@@ -448,7 +453,7 @@ namespace HarmonyMod
                     m_exceptionsTriggered[circumstance] = 1;
                 }
             }
-            return ReportProblem(problem);
+            return ReportProblem(problem, circumstance);
         }
 
         internal uint ReportProblem(ProblemType problem, string detail = null)

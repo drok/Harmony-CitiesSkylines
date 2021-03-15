@@ -696,7 +696,29 @@ namespace HarmonyMod
 
         bool IAmAware.PatchACL(MethodBase original, MethodBase caller, object patchMethod, Enum patchType)
         {
-            ProhibitPatchingHarmony(original, caller);
+
+            if (original == null)
+            {
+                if (!Harmony.harmonyUsers.TryGetValue(caller.DeclaringType.Assembly.FullName, out var userStatus))
+                {
+                    var callerAssembly = caller.DeclaringType.Assembly.GetName();
+
+                    var ex = Report.GetAPIMisuseException(callerAssembly, out var reason);
+                    if (Versioning.IsObsolete(Versioning.Obsolescence.PROHIBIT_API_MISUSE_AFTER, reason))
+                    {
+                        throw ex;
+                    }
+
+                    Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser()
+                        { instancesCreated = 1, checkBeforeUse = false, legacyCaller = false};
+                }
+                else
+                {
+                    userStatus.instancesCreated++;
+                }
+            } else
+            {
+                ProhibitPatchingHarmony(original, caller);
 #if HEAVY_TRACE
             string MethodInfoFullName(MethodInfo m)
             {
@@ -714,6 +736,7 @@ namespace HarmonyMod
 
             UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] PatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to patch {original.DeclaringType.FullName}.{original.Name} with {patchMethodName} as {patchType}");
 #endif
+            }
 
             return true;
         }

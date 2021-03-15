@@ -53,5 +53,11 @@
     <Compile Include="Installer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Harmony-v2\Harmony\Harmony-v2.csproj">
+      <Project>{608c45f0-e72f-4436-b9ea-4d108b42313b}</Project>
+      <Name>Harmony-v2</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

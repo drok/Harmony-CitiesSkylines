@@ -24,7 +24,7 @@ using System.Linq;
 namespace HarmonyMod
 {
 
-    class SameAssemblyName : IEqualityComparer<AssemblyName>
+    internal class SameAssemblyName : IEqualityComparer<AssemblyName>
     {
 
         readonly bool m_compareVersion;

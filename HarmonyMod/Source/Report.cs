@@ -74,7 +74,7 @@ namespace HarmonyMod
 
         readonly Dictionary<PluginInfo, ModReportBase> m_modReports;
         readonly Dictionary<string, PluginInfo> m_removedMods;
-        readonly Dictionary<string, string> m_pathToAssemblyMap;
+        readonly Dictionary<string, List<Assembly>> m_pathToAssemblyMap;
 
         readonly HashSet<AssemblyName> haveAssemblies;
         readonly HashSet<AssemblyName> missingAssemblies;
@@ -113,7 +113,7 @@ namespace HarmonyMod
 
             m_modReports = new Dictionary<PluginInfo, ModReportBase>();
             m_removedMods = new Dictionary<string, PluginInfo>();
-            m_pathToAssemblyMap = new Dictionary<string, string>();
+            m_pathToAssemblyMap = new Dictionary<string, List<Assembly>>();
 
             haveAssemblies = new HashSet<AssemblyName>(new SameAssemblyName());
             missingAssemblies = new HashSet<AssemblyName>(new SameAssemblyName());
@@ -233,6 +233,20 @@ namespace HarmonyMod
                     continue;
                 }
                 var modReport = GetReport(mod);
+                mod.GetAssemblies()
+                    .Exists((a) =>
+                    {
+                        if (Harmony.harmonyUsers.TryGetValue(a.FullName, out var modStatus))
+                        {
+                            if (!modStatus.checkBeforeUse && !modStatus.legacyCaller)
+                            {
+                                var ex = GetAPIMisuseException(a.GetName(), out var reason);
+                                modReport.ReportProblem(ModReport.ProblemType.GenericProblem, ex);
+                            }
+                            return true;
+                        }
+                        return false;
+                    });
                 if (!showOnlyProblems || modReport.numProblems != 0)
                 {
                     totalProblems += modReport.numProblems;
@@ -320,14 +334,14 @@ namespace HarmonyMod
 
                 if (plugin.isEnabled)
                 {
-                    m_pathToAssemblyMap[plugin.modPath] = plugin.userModInstance.GetType().Assembly.FullName;
+                    m_pathToAssemblyMap[plugin.modPath] = plugin.GetAssemblies();
                 }
             } else if (!(modReport as ModReport).isEnumerated)
             {
                 if (plugin.isEnabled)
                 {
                     (modReport as ModReport).isEnumerated = true;
-                    m_pathToAssemblyMap[plugin.modPath] = plugin.userModInstance.GetType().Assembly.FullName;
+                    m_pathToAssemblyMap[plugin.modPath] = plugin.GetAssemblies();
                 }
             }
             return modReport as ModReport;
@@ -368,6 +382,17 @@ namespace HarmonyMod
             SelfDiagnostics(self);
             Output(final, ReportFormat.PlainText, stepName);
             report = string.Empty;
+
+#if TRACE
+            if (final)
+            {
+                string users = string.Empty;
+                Harmony.harmonyUsers.Do((u) => {
+                    users += $"{ u.Key} : checksBeforeUse: { u.Value.checkBeforeUse} legacy: {u.Value.legacyCaller}, { u.Value.instancesCreated} instances\n";
+                });
+                UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Harmony Users:\n{users}");
+            }
+#endif
         }
 
         internal void OnModListChanged(bool inGame)
@@ -427,11 +452,11 @@ namespace HarmonyMod
             m_modReports.Keys.Except(Singleton<PluginManager>.instance.GetPluginsInfo()).
                 Do((p) =>
                 {
-                    string key;// = p.isEnabled ? p.userModInstance.GetType().AssemblyQualifiedName : key = p.modPath;
-                    if (!m_pathToAssemblyMap.TryGetValue(p.modPath, out key))
+                    string key = p.modPath;
+                    if (!m_pathToAssemblyMap.TryGetValue(p.modPath, out var assemblies))
                     {
                         /* Ie, for mods that are removed but were never enabled; they are known by path */
-                        key = p.modPath;
+                        assemblies.Exists((a) => { key = a.FullName; return true; });
                     }
                     if (!m_removedMods.TryGetValue(key, out var removedMod))
                     {
@@ -997,14 +1022,14 @@ namespace HarmonyMod
                 var stackTrace = new System.Diagnostics.StackTrace(e, true);
                 /* This prints a duplicate exception in the log */
 
-                triggerIsFailure = e is HarmonyModSupportException || e is HarmonyModACLException || e is HarmonyUserException;
+                triggerIsFailure = e is HarmonyModSupportException || e is HarmonyModACLException || Patcher.isHarmonyUserException(e);
                 if (e is HarmonyModSupportException)
                 {
                     ReportUnsupportedHarmony(e as HarmonyModSupportException);
                     break;
                 }
 // #if TRACE
-                else if (e is HarmonyUserException)
+                else if (Patcher.isHarmonyUserException(e))
                 {
                     UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception from patchset '{(e as HarmonyUserException)?.harmonyInstance?.Id}' ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
                 }
@@ -1071,7 +1096,7 @@ namespace HarmonyMod
                         }
                     }
                 }
-                if (e is HarmonyModSupportException || e is HarmonyModACLException || e is HarmonyUserException) break;
+                if (e is HarmonyModSupportException || e is HarmonyModACLException || Patcher.isHarmonyUserException(e)) break;
             }
             string triggerStr = string.Empty;
             if (triggeringMod != null)
@@ -1210,5 +1235,13 @@ namespace HarmonyMod
             }
             return message;
         }
+        internal static HarmonyModACLException GetAPIMisuseException(AssemblyName caller, out string reason)
+        {
+            reason = "CitiesHarmony.API misuse by " + caller.Name + "[" + caller.Version + "]";
+            var ex = new HarmonyModACLException(reason + " is prohibited");
+            ex.HelpLink = "https://github.com/drok/Harmony-CitiesSkylines/issues/8";
+            return ex;
+        }
+
     }
 }

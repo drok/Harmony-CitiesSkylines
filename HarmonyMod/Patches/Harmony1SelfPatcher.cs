@@ -173,6 +173,10 @@ namespace HarmonyMod
                 }
             }
 
+            if (!Harmony.harmonyUsers.TryGetValue(caller.DeclaringType.Assembly.FullName, out var userStatus))
+            {
+                Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser() { checkBeforeUse = false, legacyCaller = true, instancesCreated = 0, };
+            }
             return new Harmony(harmonyId, caller);
         }
 

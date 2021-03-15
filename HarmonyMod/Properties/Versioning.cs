@@ -29,6 +29,12 @@ namespace HarmonyMod
              * should probably never be obsoleted
              */
             public const uint AUTO_INSTALL_HELPER = 0x03000000;
+
+            /* PatchACL will deny Harmony using mods that don't use the
+             * CitiesHarmony.API (IsHarmonyInstalled, DoOnHarmonyReady, etc)
+             * after this version
+             */
+            public const uint PROHIBIT_API_MISUSE_AFTER = 0x01010000;
         }
 
         public static string VersionString(uint number)
@@ -45,7 +51,7 @@ namespace HarmonyMod
             bool obsolete = ImplementationVersion >= ver;
             if (!obsolete)
             {
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING '{explanation}' will be removed at release {VersionString(ver)}");
+                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING '{explanation}' is deprecated; Will be obsolete at {PACKAGE_NAME} {VersionString(ver)}");
             }
             return obsolete;
         }
