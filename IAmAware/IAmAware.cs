@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using static ColossalFramework.Plugins.PluginManager;
 
 namespace IAwareness
@@ -76,9 +77,33 @@ namespace IAwareness
          */
         bool DoOnHarmonyReady(List<ClientCallback> callbacks);
 
-        /* The API calls this to cancell callbacks to its callers
+        /* The API calls this to cancel callbacks to its callers
          */
         void CancelHarmonyReadyCallback(List<ClientCallback> callbacks);
+
+        /// <summary>Check permission to Unpatch. Non-patch manager can be prohibited
+        /// from removing a manager installed patch.
+        /// </summary>
+        /// <param name="original">Target method which is to be patched</param>
+        /// <param name="caller">Method originating the unpatch request</param>
+        /// <param name="patchMethod">Patch to be removed</param>
+        /// <returns>true if unpatch is allowed, false if it should be skipped</returns>
+        /// <remarks>Added at 0.0.1.0</remarks>
+        /// <exception cref="HarmonyModACLException">Thrown if access is blocked</exception>
+        bool UnpatchACL(MethodBase original, MethodBase caller, MethodInfo patchMethod);
+
+        /// <summary>
+        /// Check permission to install a patch. User mods can be prohibited
+        /// from patching the manager or other game methods
+        /// </summary>
+        /// <param name="original">Target method which is to be patched</param>
+        /// <param name="caller">Method originating the unpatch request</param>
+        /// <param name="patchMethod">Patch to be removed</param>
+        /// <param name="patchType">Prefix, Postfix, etc</param>
+        /// <returns>true if patch is allowed, false if it should be skipped</returns>
+        /// <remarks>Added at 0.0.1.0</remarks>
+        /// <exception cref="HarmonyModACLException">Thrown if access is blocked</exception>
+        bool PatchACL(MethodBase original, MethodBase caller, object patchMethod, Enum patchType);
     }
 
     internal struct ClientCallback

@@ -17,8 +17,7 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-extern alias Awareness;
-using Awareness::IAwareness;
+using IAwareness;
 using ColossalFramework;
 using ColossalFramework.Plugins;
 using ColossalFramework.PlatformServices;
@@ -76,7 +75,7 @@ namespace HarmonyMod
             isEnumerated = enumerated;
 
             SameAssemblyName sameName = new SameAssemblyName();
-            if (p.assemblyCount != 0)
+            if (p.assemblyCount != 0 && p.userModInstance != null)
             {
                 var refs = p.userModInstance.GetType().Assembly.GetReferencedAssemblies();
                 foreach (var assemblyName in refs)

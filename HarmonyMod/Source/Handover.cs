@@ -18,8 +18,7 @@
  */
 
 extern alias Harmony2;
-extern alias Awareness;
-using Awareness::IAwareness;
+using IAwareness;
 using System;
 using System.Reflection;
 using System.Collections.Generic;

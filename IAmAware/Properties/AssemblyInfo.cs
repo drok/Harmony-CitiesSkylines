@@ -32,19 +32,24 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.0.0.0")]
+[assembly: AssemblyVersion("0.0.1.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-// MonoMod.Common uses IgnoresAccessChecksTo on its end,
-// but older versions of the .NET runtime bundled with older versions of Windows
-// require Harmony to expose its internals instead.
-// This is only relevant for when MonoMod.Common gets merged into Harmony.
-[assembly: InternalsVisibleTo("HarmonyMod.Tests, PublicKey=" +
+/* Allow access to previous versions for interface upgrades */
+[assembly: InternalsVisibleTo("IAmAware, PublicKey=" +
 	"0024000004800000940000000602000000240000525341310004000001000100" +
 	"e9f6f326593be181e1d4fea8ba7d991fc9ff3e7adf8ee659550cd00e34673409d5e177bab53f08" +
 	"4410455066e2a05864973a0b91b4fd6f827f6d0c70db0299db5f7d95429418e0e58a519838ceda" +
 	"4ad16caf832a9da9feac59c8ea78a37f8e22c85058e544801972d98c1ad999e6aa09374cb69606" +
 	"7a66ae7b154d0e616ca0b0")]
+
+/* Allow integration tests unrestricted access for testing */
+[assembly: InternalsVisibleTo("Test.Harmony, PublicKey=" +
+	"00240000048000009400000006020000002400005253413100040000010001009d0f13cde5b126" +
+	"c67d0c94873430cc171f8919863c6218a5bc1788a91caf6c197a851fdd4e5df5fe68726b5ca92a" +
+	"cd2a47770cde3eb1538693a427a6c7591878b59dacc8fd24339f0e77f923ada3f80133f3a5b182" +
+	"d7d04b16fb7bd02abff840b4b4ed9114463fef35c3437385205ebed7906a29ce6bd16a84e50129" +
+	"8c8224ba")]
 
 /* Allow HarmonyMods to communicate with each other
  */

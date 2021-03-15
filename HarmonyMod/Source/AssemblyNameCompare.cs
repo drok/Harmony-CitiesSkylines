@@ -19,12 +19,35 @@
 
 using System.Reflection;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HarmonyMod
 {
 
     class SameAssemblyName : IEqualityComparer<AssemblyName>
     {
+
+        readonly bool m_compareVersion;
+        readonly bool m_compareToken;
+        readonly bool m_compareName;
+        readonly bool m_compareCulture;
+        readonly bool m_satisfyStrongName;
+
+        public SameAssemblyName()
+        {
+            m_compareName = true;
+            m_compareToken = true;
+            m_compareVersion = true;
+            m_satisfyStrongName = false;
+        }
+        public SameAssemblyName(bool compareVersion, bool compareToken, bool compareName, bool compareCulture)
+        {
+            m_compareVersion = compareVersion;
+            m_compareToken = compareToken;
+            m_compareName = compareName;
+            m_compareCulture = compareCulture;
+            m_satisfyStrongName = true;
+        }
 
         public int GetHashCode(AssemblyName n)
         {
@@ -36,11 +59,11 @@ namespace HarmonyMod
         }
         public bool Equals(AssemblyName a, AssemblyName b)
         {
-            bool result = a.Name.Equals(b.Name) &&
-                a.Version.Equals(b.Version) &&
-                ((a.GetPublicKeyToken() == null && b.GetPublicKeyToken() == null) ||
-                a.GetPublicKeyToken().ToString() == b.GetPublicKeyToken().ToString()) &&
-                a.CultureInfo.Equals(b.CultureInfo);
+            bool result = (!m_compareName || a.Name.Equals(b.Name)) &&
+                (!m_compareVersion || a.Version.Equals(b.Version)) &&
+                (!m_compareToken || (a.GetPublicKeyToken().Length == 0 && (!m_satisfyStrongName || b.GetPublicKeyToken().Length == 0)) ||
+                (a.GetPublicKeyToken().SequenceEqual(b.GetPublicKeyToken()))) &&
+                (!m_compareCulture || a.CultureInfo.Equals(b.CultureInfo));
             return result;
         }
 

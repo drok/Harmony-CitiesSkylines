@@ -18,9 +18,11 @@
  */
 
 extern alias Harmony2;
-extern alias Awareness;
+extern alias Harmony2009;
+extern alias Harmony2010;
+extern alias HarmonyCHH2040;
 using JetBrains.Annotations;
-using Awareness::IAwareness;
+using IAwareness;
 using ICities;
 using System;
 using System.IO;
@@ -118,7 +120,7 @@ namespace HarmonyMod
 #endif
             }
         }
-#endregion
+        #endregion
 
         /* enabled is sticky, as this mod can only be enabled for now, but not disabled.
          * FIXME: Implement teardown, then disabling will work.
@@ -137,11 +139,11 @@ namespace HarmonyMod
 #if DEVELOPER
         internal bool isLocal => handover.isLocal;
         internal bool isHelperLocal => handover.isHelperLocal;
+        bool haveOwnHarmonyLib = false;
 #endif
 
         internal Report report;
 
-        bool haveOwnHarmonyLib = false;
         static bool needAutoEnableCall = false;
 #if DEVELOPER_UPDATER
         static bool needInstallCall = true;
@@ -462,12 +464,14 @@ namespace HarmonyMod
 
         void Deactivate()
         {
+#if DEVELOPER
             /* FIXME: Implement API to provide status to other mods */
             patcher?.UninstallAll();
             if (haveOwnHarmonyLib)
             {
                 Harmony.isEnabled = false;
             }
+#endif
         }
 
 #region Awareness Handlers
@@ -632,6 +636,72 @@ namespace HarmonyMod
 
         void IAmAware.CancelHarmonyReadyCallback(List<ClientCallback> callbacks)
         {
+        }
+
+        void ProhibitPatchingHarmony(MethodBase original, MethodBase caller)
+        {
+            SameAssemblyName sameAssembly = new SameAssemblyName();
+            var myAssembly = Assembly.GetExecutingAssembly();
+            if (sameAssembly.Equals(caller.DeclaringType.Assembly.GetName(), myAssembly.GetName()))
+            {
+                return;
+            }
+            var originalAssemblyName = original.DeclaringType.Assembly.GetName();
+            SameAssemblyName signatureComparer = new SameAssemblyName(false, true, false, false);
+
+            if (signatureComparer.Equals(originalAssemblyName, myAssembly.GetName()) || originalAssemblyName.Name == "0Harmony")
+            {
+                throw new HarmonyModACLException($"(Un)Patching {Versioning.PACKAGE_NAME} is prohibited");
+            }
+        }
+
+        void ProhibitRemovingHarmony(MethodBase orginal, MethodBase caller, MethodInfo patchMethod)
+        {
+            SameAssemblyName sameAssembly = new SameAssemblyName();
+            var myAssembly = Assembly.GetExecutingAssembly();
+            if (sameAssembly.Equals(patchMethod.DeclaringType.Assembly.GetName(), myAssembly.GetName()) &&
+                !sameAssembly.Equals(caller.DeclaringType.Assembly.GetName(), myAssembly.GetName()))
+            {
+                throw new HarmonyModACLException($"(Un)Patching {Versioning.PACKAGE_NAME} is prohibited");
+            }
+            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows because caller is self or patch is not mine.");
+        }
+
+        bool IAmAware.PatchACL(MethodBase original, MethodBase caller, object patchMethod, Enum patchType)
+        {
+            ProhibitPatchingHarmony(original, caller);
+#if HEAVY_TRACE
+            string MethodInfoFullName(MethodInfo m)
+            {
+                if (m == null) return "m-is-null";
+                return m.DeclaringType?.FullName + "." + m.Name;
+            }
+
+            var patchMethodName =
+                (patchMethod is null) ? "*null*" :
+                (patchMethod is HarmonyMethod) ? MethodInfoFullName((patchMethod as HarmonyMethod).method) :
+                (patchMethod is Harmony2009::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as Harmony2009::HarmonyLib.HarmonyMethod).method) :
+                (patchMethod is Harmony2010::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as Harmony2010::HarmonyLib.HarmonyMethod).method) :
+                (patchMethod is HarmonyCHH2040::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as HarmonyCHH2040::HarmonyLib.HarmonyMethod).method) :
+                patchMethod.GetType().FullName;
+
+            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] PatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to patch {original.DeclaringType.FullName}.{original.Name} with {patchMethodName} as {patchType}");
+#endif
+
+            return true;
+        }
+
+        bool IAmAware.UnpatchACL(MethodBase original, MethodBase caller, MethodInfo patchMethod)
+        {
+            // ProhibitPatchingHarmony(original, caller);
+
+            ProhibitRemovingHarmony(original, caller, patchMethod);
+
+#if HEAVY_TRACE
+            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to unpatch {original.DeclaringType.FullName}.{original.Name}");
+#endif
+
+            return true;
         }
 #endregion
 

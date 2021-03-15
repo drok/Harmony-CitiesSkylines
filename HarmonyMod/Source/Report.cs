@@ -18,8 +18,7 @@
  */
 
 extern alias Harmony2;
-extern alias Awareness;
-using Awareness::IAwareness;
+using IAwareness;
 using ColossalFramework;
 using ColossalFramework.UI;
 using ColossalFramework.Plugins;
@@ -89,7 +88,7 @@ namespace HarmonyMod
             "0Harmony, Version=2.0.1.0",
             "0Harmony, Version=2.0.4.0",
             "CitiesHarmony.Harmony, Version=2.0.4.0",
-            "IAmAware, Version=0.0.0.0",
+            "IAmAware, Version=0.0.1.0",
             "CitiesHarmony, Version=0.0.0.0",
         };
 
@@ -980,12 +979,15 @@ namespace HarmonyMod
             PluginInfo triggeringMod = null,
                 failingMod = null;
             string triggerInfo = string.Empty;
+            bool triggerIsFailure = false;
 
             int level = 0;
             for (var e = exception; e != null; e = e.InnerException)
             {
                 var stackTrace = new System.Diagnostics.StackTrace(e, true);
                 /* This prints a duplicate exception in the log */
+
+                triggerIsFailure = e is HarmonyModSupportException || e is HarmonyModACLException || e is HarmonyUserException;
                 if (e is HarmonyModSupportException)
                 {
                     ReportUnsupportedHarmony(e as HarmonyModSupportException);
@@ -994,7 +996,7 @@ namespace HarmonyMod
 // #if TRACE
                 else if (e is HarmonyUserException)
                 {
-                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception from patchset '{(e as HarmonyUserException).harmonyInstance.Id}' ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
+                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception from patchset '{(e as HarmonyUserException)?.harmonyInstance?.Id}' ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
                 }
                 else
                 {
@@ -1027,7 +1029,7 @@ namespace HarmonyMod
                             uint n = 0;
                             string location = frame.GetFileName() != null ? $" in {frame.GetFileName()}:{frame.GetFileLineNumber()}" : string.Empty;
                             {
-                                if (i == 0 || e is AssertionException)
+                                if (!triggerIsFailure && (i == 0 || e is AssertionException))
                                 {
                                     // var modReport = GetReport(mod);
                                     string desc;
@@ -1047,7 +1049,7 @@ namespace HarmonyMod
                                 }
                                 else
                                 {
-                                    triggerInfo = $"{e.GetType().Name} from {method.DeclaringType.FullName}.{method.Name}{location}";
+                                    triggerInfo = $"{e.GetType().Name}: {e.Message} from {method.DeclaringType.FullName}.{method.Name}{location}";
                                     triggeringMod = mod;
                                 }
                             }
@@ -1059,21 +1061,25 @@ namespace HarmonyMod
                         }
                     }
                 }
-                if (e is HarmonyUserException) break;
+                if (e is HarmonyModSupportException || e is HarmonyModACLException || e is HarmonyUserException) break;
             }
             string triggerStr = string.Empty;
             if (triggeringMod != null)
             {
                 firstTriggerCount = GetReport(triggeringMod, ModReport.ProblemType.ExceptionTriggered, exception, triggerInfo);
+#if HEAVY_TRACE
                 triggerStr = $"; {firstTriggerCount} triggered so far by {triggeringMod.name}";
+#endif
+                if (triggerIsFailure)
+                    firstFailureProblemCount = firstTriggerCount;
             }
+#if HEAVY_TRACE
             string failStr = string.Empty;
             if (failingMod != null)
             {
                 failStr = $"{firstFailureProblemCount} failures shown so far by {failingMod.name}";
             }
 
-#if HEAVY_TRACE
             UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING Exception will " +
             $"{(firstFailureProblemCount <= MAX_EXCEPTION_PROMPTS_PER_MOD ? string.Empty : "not ")}be reported with a pop-up " +
                 $"({failStr}{triggerStr})");

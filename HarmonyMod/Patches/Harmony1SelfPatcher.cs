@@ -3,6 +3,7 @@ using Harmony2::HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using ICities;
@@ -76,7 +77,7 @@ namespace HarmonyMod
 #if DEBUG
             UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Unpatching all (HarmonyId: {harmonyID})");
 #endif
-            var harmony = new Harmony(___id);
+            var harmony = CreateHarmony(___id);
             harmony.UnpatchAll(harmonyID);
 
             return false;
@@ -149,8 +150,30 @@ namespace HarmonyMod
         private static Harmony CreateHarmony(object oldHarmonyInstance) {
             var HarmonyInstance__id = oldHarmonyInstance.GetType().GetFieldOrThrow("id", BindingFlags.NonPublic | BindingFlags.Instance);
             var harmonyId = (string)HarmonyInstance__id.GetValue(oldHarmonyInstance);
+            return CreateHarmony(harmonyId);
+        }
 
-            return new Harmony(harmonyId);
+        private static Harmony CreateHarmony(string harmonyId)
+        {
+            var stack = new StackTrace();
+            var lastCaller = stack.GetFrame(0).GetMethod();
+            MethodBase caller = lastCaller;
+            int assemblyDepth = 0;
+            SameAssemblyName assemblyComparator = new SameAssemblyName(true, false, true, true);
+            /* Search in the stack for the assembly that called
+             * my caller(0Harmony 1.x)
+             */
+            for (int i = 1; i < stack.FrameCount && assemblyDepth < 2; ++i)
+            {
+                caller = stack.GetFrame(i).GetMethod();
+                if (!assemblyComparator.Equals(lastCaller.DeclaringType.Assembly.GetName(), caller.DeclaringType.Assembly.GetName()))
+                {
+                    lastCaller = caller;
+                    ++assemblyDepth;
+                }
+            }
+
+            return new Harmony(harmonyId, caller);
         }
 
         private static HarmonyMethod CreateHarmonyMethod(object oldHarmonyMethod) {

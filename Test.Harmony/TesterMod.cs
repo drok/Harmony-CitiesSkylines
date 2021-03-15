@@ -1,11 +1,15 @@
-﻿using System;
+﻿using IAwareness;
+using System;
 using CitiesHarmony.API;
 using HarmonyLib;
 using ICities;
 using UnityEngine;
 using System.Reflection;
+using ColossalFramework;
+using ColossalFramework.Plugins;
 
-namespace HarmonyMod.Tests {
+namespace HarmonyMod.Tests
+{
 
     public class TestFailed : Exception
     {
@@ -46,10 +50,47 @@ namespace HarmonyMod.Tests {
             try
             {
                 new AttributePatchTest().Run();
+                new ACLTest().Run();
+
+                bool hamonyModTestsDone = false;
+                Singleton<PluginManager>.instance.GetPluginsInfo().DoIf(
+                    (p) => p.isEnabled && p.userModInstance is IAmAware,
+                    (p) => {
+                        hamonyModTestsDone = true;
+                        new ACLTest().RunAfterHarmony();
+                    });
+
+                if (!hamonyModTestsDone)
+                {
+                    Singleton<PluginManager>.instance.eventPluginsChanged += OnModEnabled;
+                }
             }
             catch (TestFailed ex)
             {
                 throw new TestFailed($"Test API-{typeof(HarmonyHelper).Assembly.GetName().Version} failed {ex.Message}", ex);
+            }
+        }
+
+        static void OnModEnabled()
+        {
+            bool hamonyModTestsDone = false;
+            Singleton<PluginManager>.instance.GetPluginsInfo().DoIf(
+                (p) => p.isEnabled && p.userModInstance is IAmAware,
+                (p) => {
+                    try
+                    {
+                        new ACLTest().RunAfterHarmony();
+                    }
+                    catch (TestFailed ex)
+                    {
+                        throw new TestFailed($"Test API-{typeof(HarmonyHelper).Assembly.GetName().Version} failed {ex.Message}", ex);
+                    }
+                    hamonyModTestsDone = true;
+                });
+
+            if (hamonyModTestsDone)
+            {
+                Singleton<PluginManager>.instance.eventPluginsChanged -= OnModEnabled;
             }
         }
     }

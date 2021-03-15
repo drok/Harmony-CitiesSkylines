@@ -21,12 +21,11 @@ extern alias Harmony2;
 extern alias Harmony2009;
 extern alias Harmony2010;
 extern alias HarmonyCHH2040;
-extern alias Awareness;
 
 
 namespace HarmonyMod
 {
-    using Awareness::IAwareness;
+    using IAwareness;
     using Harmony2::HarmonyLib;
     using System;
     using System.Collections.Generic;
@@ -52,7 +51,7 @@ namespace HarmonyMod
 
         IAmAware self;
 
-        internal Patcher(IAmAware selfMod = null, string name = null, bool onAwarenessCallback = false)
+        internal Patcher(IAmAware selfMod, string name, bool onAwarenessCallback = false)
         {
             id = HARMONY_ID + (name != null ? "+" + name : string.Empty);
             compat_id = id + "+Compat";
@@ -92,9 +91,16 @@ namespace HarmonyMod
         {
             bool wasInitialized = Harmony.m_enabled.HasValue;
             Harmony.isEnabled = true;
-            Harmony2009.HarmonyLib.Harmony.isEnabled = true;
-            Harmony2010.HarmonyLib.Harmony.isEnabled = true;
-            HarmonyCHH2040.HarmonyLib.Harmony.isEnabled = true;
+            if (self != null)
+            {
+                Harmony.awarenessInstance = self;
+                Harmony2010::HarmonyLib.Harmony.awarenessInstance = self;
+                Harmony2009::HarmonyLib.Harmony.awarenessInstance = self;
+                HarmonyCHH2040::HarmonyLib.Harmony.awarenessInstance = self;
+            }
+            Harmony2009::HarmonyLib.Harmony.isEnabled = true;
+            Harmony2010::HarmonyLib.Harmony.isEnabled = true;
+            HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = true;
 
             return wasInitialized;
         }
@@ -102,10 +108,9 @@ namespace HarmonyMod
         void DisableHarmony()
         {
             Harmony.isEnabled = false;
-            Harmony.isEnabled = false;
-            Harmony2009.HarmonyLib.Harmony.isEnabled = false;
-            Harmony2010.HarmonyLib.Harmony.isEnabled = false;
-            HarmonyCHH2040.HarmonyLib.Harmony.isEnabled = false;
+            Harmony2009::HarmonyLib.Harmony.isEnabled = false;
+            Harmony2010::HarmonyLib.Harmony.isEnabled = false;
+            HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = false;
         }
 
         internal bool Install()

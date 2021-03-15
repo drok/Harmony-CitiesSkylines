@@ -8,7 +8,7 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <Configurations>0.9.0;1.0.3;1.0.4;1.0.5;1.0.6;2.0.0</Configurations>
   </PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)'!='Debug'">
+	<PropertyGroup>
 		<DelaySign>false</DelaySign>
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
@@ -34,6 +34,9 @@
     <Reference Include="ColossalManaged">
       <HintPath>C:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="IAmAware">
+      <HintPath>C:\References\IAmAware-0.0.1.0.dll</HintPath>
     </Reference>
     <Reference Include="ICities">
       <HintPath>C:\References\ICities.dll</HintPath>
