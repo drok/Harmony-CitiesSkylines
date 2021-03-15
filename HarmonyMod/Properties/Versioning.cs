@@ -10,8 +10,8 @@ namespace HarmonyMod
 {
     public static class Versioning
     {
-        public const string ReleaseStr = "1";
-        public const uint ImplementationVersion = 0x00090000;
+        public const string ReleaseStr = "2";
+        public const uint ImplementationVersion = 0x00090002;
         public const string MyAssemblyVersion = "1.0.0." + ReleaseStr + ReleaseTypeStr;
         public const string MyFileVersion = "0.9";
         public const string PACKAGE_NAME = "Harmony";
