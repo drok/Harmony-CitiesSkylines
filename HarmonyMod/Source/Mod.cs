@@ -133,6 +133,7 @@ namespace HarmonyMod
         internal static bool firstRun = false;
         internal static PluginInfo mainMod;
         internal static PluginInfo helperMod;
+        internal static Mod mainModInstance;
 
         internal bool isHelperFirst => handover.isHelperFirst;
         internal bool isFirst => handover.isFirst;
@@ -151,9 +152,12 @@ namespace HarmonyMod
 
         Handover handover;
         Patcher patcher;
+        bool pluginManagerShuttingDown = false;
 
         static Mod()
         {
+            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor");
+
             try
             {
                 //#if DEBUG
@@ -209,8 +213,9 @@ namespace HarmonyMod
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod..ctor: ({Report.ExMessage(ex, true)})");
+                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor: ({Report.ExMessage(ex, true)})");
             }
+            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor DONE");
 
         }
         // Install Harmony as soon as possible to avoid problems with mods not following the guidelines
@@ -316,14 +321,16 @@ namespace HarmonyMod
                 if (handover != null)
                 {
 #if TRACE
-                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() I am={handover.self.name} #{instancenum}");
+                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() I am={handover.self.name} #{instancenum} " +
+                        $"{(pluginManagerShuttingDown ? "Exiting Application" : "Disabled by user action")}");
 #endif
                     if (enabled)
                     {
 #if HEAVY_TRACE
                         resolver?.Uninstall();
 #endif
-                        patcher?.Uninstall();
+                        if (!pluginManagerShuttingDown) /* If shutdown is user requested, do it. */
+                            patcher?.Uninstall();
                         /* The last Harmony Mod turn off the HarmonyLib */
 #if IMPLEMENTED_ORDERLY_APP_SHUTDOWN
                         if (handover.mainMod() == null)
@@ -341,8 +348,11 @@ namespace HarmonyMod
 #if DEBUG
                     ListLoadedMods();
 #endif
-                    report?.OnDisabled(handover.self, false);
-                    report = null;
+                    if (!pluginManagerShuttingDown)
+                    {
+                        report?.OnDisabled(handover.self, false);
+                        report = null;
+                    }
                     enabled = false;
                 }
 #if HEAVY_TRACE
@@ -423,10 +433,23 @@ namespace HarmonyMod
         }
 #endregion
 
+        internal void OnPluginManagerDestroyStart()
+        {
+            pluginManagerShuttingDown = true;
+        }
+        internal void OnPluginManagerDestroyDone()
+        {
+            patcher?.Uninstall();
+            patcher = null;
+
+            report?.OnDisabled(mainMod, false);
+            report = null;
+        }
 
         void OnActive()
         {
             mainMod = handover.mainMod();
+            mainModInstance = mainMod.userModInstance as Mod;
             helperMod = handover.helperMod;
 
             bool haveHarmony = true;
@@ -499,6 +522,8 @@ namespace HarmonyMod
                         {
                             helperMod = handover.helperMod;
                             mainMod = handover.mainMod();
+                            mainModInstance = mainMod.userModInstance as Mod;
+
                             UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Helper role to Mod '{mainModName}'");
                         } else
                         {
@@ -664,7 +689,9 @@ namespace HarmonyMod
             {
                 throw new HarmonyModACLException($"(Un)Patching {Versioning.PACKAGE_NAME} is prohibited");
             }
+#if HEAVY_TRACE
             UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows because caller is self or patch is not mine.");
+#endif
         }
 
         bool IAmAware.PatchACL(MethodBase original, MethodBase caller, object patchMethod, Enum patchType)
