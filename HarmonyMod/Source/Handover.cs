@@ -40,7 +40,22 @@ namespace HarmonyMod
 
         internal Handover (IAmAware selfMod)
         {
-            m_self = Singleton<PluginManager>.instance.GetPluginsInfo().First((x) => x.isEnabledNoOverride && x.userModInstance == selfMod);
+            m_self = Singleton<PluginManager>.instance.GetPluginsInfo().First((x) => {
+                try
+                {
+                    return x.isEnabledNoOverride && x.userModInstance == selfMod;
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    ex.LoaderExceptions.Do((e) => (selfMod as Mod).report.ReportPlugin(x, ModReport.ProblemType.ExceptionThrown, $"LoaderException: {e}"));
+                }
+                catch (Exception ex)
+                {
+                    (selfMod as Mod).report.ReportPlugin(x, ModReport.ProblemType.ExceptionThrown, ex.Message);
+                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] While Scanning plugins, {x.name} caused exception {ex.GetType().Name}: {ex.Message}");
+                }
+                return false;
+            });
 
             DisableHarmonyFromBoformer();
         }
@@ -236,10 +251,22 @@ namespace HarmonyMod
             {
                 if (mod != m_mainMod && mod != m_self && mod.isEnabledNoOverride)
                 {
-                    var awareInst = mod.userModInstance as IAmAware;
-                    if (awareInst != null)
+                    try
                     {
-                        awareInst.OnMainModChanged(selfAware, mainEnabled);
+                        IAmAware awareInst = mod.userModInstance as IAmAware;
+                        if (awareInst != null)
+                        {
+                            awareInst.OnMainModChanged(selfAware, mainEnabled);
+                        }
+                    }
+                    catch (ReflectionTypeLoadException ex)
+                    {
+                        ex.LoaderExceptions.Do((e) => (m_self.userModInstance as Mod).report.ReportPlugin(mod, ModReport.ProblemType.ExceptionThrown, $"LoaderException: {e}"));
+                    }
+                    catch (Exception ex)
+                    {
+                        (m_self.userModInstance as Mod).report.ReportPlugin(mod, ModReport.ProblemType.ExceptionThrown, ex.Message);
+                        UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] While notifying standys, {mod.name} caused exception {ex.GetType().Name}: {ex.Message}");
                     }
                 }
             }

@@ -107,7 +107,7 @@ namespace HarmonyMod
        public Report()
        {
             selfDiag_problems = new bool[(int)SelfProblemType.Last];
-#if TRACE
+#if HEAVY_TRACE
             UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Report Created\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
 #endif
 
@@ -393,8 +393,18 @@ namespace HarmonyMod
                     else {
                         modReport = GetReport(p, true);
                     }
-               
-                    string key = p.isEnabled ? p.userModInstance.GetType().Assembly.FullName : key = p.modPath;
+
+
+                    string key = p.modPath;
+                    try
+                    {
+                        if (p.isEnabled)
+                            key = p.GetAssemblies()[0].FullName; //userModInstance.GetType().Assembly.FullName;
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+
                     if (m_removedMods.TryGetValue(key, out PluginInfo oldMod)/* || p.isEnabled*/)
                     {
                         modReport.Merge(GetReport(oldMod));
@@ -1104,6 +1114,10 @@ namespace HarmonyMod
         internal void ReportPlugin (PluginInfo plugin, ModReport.ProblemType problem, string detail = null)
         {
             GetReport(plugin).ReportProblem(problem, detail);
+        }
+        internal void ReportPlugin(PluginInfo plugin, ModReport.ProblemType problem, Exception ex, string detail = null)
+        {
+            GetReport(plugin).ReportProblem(problem, ex, detail);
         }
 
         internal void ReportActivity (string activity)

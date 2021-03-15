@@ -17,6 +17,8 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+extern alias Harmony2;
+using Harmony2::HarmonyLib;
 using IAwareness;
 using ColossalFramework;
 using ColossalFramework.Plugins;
@@ -75,43 +77,48 @@ namespace HarmonyMod
             isEnumerated = enumerated;
 
             SameAssemblyName sameName = new SameAssemblyName();
-            if (p.assemblyCount != 0 && p.userModInstance != null)
+
+            if (p.assemblyCount != 0)
             {
-                var refs = p.userModInstance.GetType().Assembly.GetReferencedAssemblies();
-                foreach (var assemblyName in refs)
-                {
-                    switch (assemblyName.Name)
+                p.GetAssemblies()
+                    .Do((assembly) =>
                     {
-                        case "0Harmony":
-                            needsHarmony = assemblyName.Version;
-                            m_usesHarmony = true;
-                            break;
-                        case "CitiesHarmony.API":
-                            needsHarmonyAPI = assemblyName.Version;
-                            m_usesHarmony = true;
-                            break;
-                        case "CitiesHarmony.Harmony":
-                            needsNewHarmony = assemblyName.Version;
-                            m_usesHarmony = true;
-                            break;
-                    }
-
-                    if (!haveAssemblies.Contains(assemblyName))
-                    {
-                        m_missingAssemblies.Add(assemblyName);
-                    }
-
-                    if (unsupportedLibs != null)
-                    {
-                        unsupportedLibs.unsupportedAssemblies.ForEach((u) =>
+                        var refs = assembly.GetReferencedAssemblies();
+                        foreach (var assemblyName in refs)
                         {
-                            if (sameName.Equals(u.assembly.GetName(), assemblyName))
+                            switch (assemblyName.Name)
                             {
-                                ReportProblem(ModReport.ProblemType.ExceptionThrown, unsupportedLibs, u.Message);
+                                case "0Harmony":
+                                    needsHarmony = assemblyName.Version;
+                                    m_usesHarmony = true;
+                                    break;
+                                case "CitiesHarmony.API":
+                                    needsHarmonyAPI = assemblyName.Version;
+                                    m_usesHarmony = true;
+                                    break;
+                                case "CitiesHarmony.Harmony":
+                                    needsNewHarmony = assemblyName.Version;
+                                    m_usesHarmony = true;
+                                    break;
                             }
-                        });
-                    }
-                }
+
+                            if (!haveAssemblies.Contains(assemblyName))
+                            {
+                                m_missingAssemblies.Add(assemblyName);
+                            }
+
+                            if (unsupportedLibs != null)
+                            {
+                                unsupportedLibs.unsupportedAssemblies.ForEach((u) =>
+                                {
+                                    if (sameName.Equals(u.assembly.GetName(), assemblyName))
+                                    {
+                                        ReportProblem(ModReport.ProblemType.ExceptionThrown, unsupportedLibs, u.Message);
+                                    }
+                                });
+                            }
+                        }
+                    });
             }
         }
 
@@ -134,24 +141,27 @@ namespace HarmonyMod
 
         internal void CacheModInfo()
         {
-            if (plugin.assemblyCount == 0)
+            IUserMod modInst = null;
+            try
+            {
+                modInst = plugin.userModInstance as IUserMod;
+            }
+            catch (Exception ex)
+            {
+            }
+
+            if (plugin.assemblyCount == 0 || modInst == null)
             {
                 var modDir = new System.IO.DirectoryInfo(plugin.modPath);
                 Name = modDir.Name;
                 modType = plugin.name;
                 Description = plugin.name;
             }
-            else if (plugin.userModInstance is not null)
-            {
-                modType = plugin.userModInstance.GetType().Namespace;
-                Name = (plugin.userModInstance as IUserMod).Name;
-                Description = (plugin.userModInstance as IUserMod).Description;
-            }
             else
             {
-                modType = "unknown";
-                Name = "unknown";
-                Description = "unknown";
+                modType = modInst.GetType().Namespace;
+                Name = modInst.Name;
+                Description = modInst.Description;
             }
         }
 
@@ -361,7 +371,7 @@ namespace HarmonyMod
                             try
                             {
                                 var p = Singleton<PluginManager>.instance.GetPluginsInfo().First((x) => x.ContainsAssembly(assembly));
-                                conflictingPlugin = $"{(p.userModInstance as IUserMod)?.Name} ({p.name}, {(p.publishedFileID == PublishedFileId.invalid ? "local" : "workshop")})";
+                                conflictingPlugin = $"{p.name}, {(p.publishedFileID == PublishedFileId.invalid ? "local" : "workshop")}";
 
                             }
                             catch (InvalidOperationException)
