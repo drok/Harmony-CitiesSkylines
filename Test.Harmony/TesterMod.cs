@@ -52,6 +52,7 @@ namespace HarmonyMod.Tests
                 new AttributePatchTest().Run();
                 new ACLTest().Run();
 
+// #if USE_ISAWARE_TYPE
                 bool hamonyModTestsDone = false;
                 Singleton<PluginManager>.instance.GetPluginsInfo().DoIf(
                     (p) => p.isEnabled && p.userModInstance is IAmAware,
@@ -59,11 +60,11 @@ namespace HarmonyMod.Tests
                         hamonyModTestsDone = true;
                         new ACLTest().RunAfterHarmony();
                     });
-
                 if (!hamonyModTestsDone)
                 {
                     Singleton<PluginManager>.instance.eventPluginsChanged += OnModEnabled;
                 }
+// #endif
             }
             catch (TestFailed ex)
             {
@@ -71,6 +72,7 @@ namespace HarmonyMod.Tests
             }
         }
 
+//#if USE_ISAWARE_TYPE
         static void OnModEnabled()
         {
             bool hamonyModTestsDone = false;
@@ -92,8 +94,10 @@ namespace HarmonyMod.Tests
             {
                 Singleton<PluginManager>.instance.eventPluginsChanged -= OnModEnabled;
             }
-        }
     }
+//#endif
+    
+}
 
     public static class ReturnColorTest {
         public static void Run() {

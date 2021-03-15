@@ -156,8 +156,6 @@ namespace HarmonyMod
 
         static Mod()
         {
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor");
-
             try
             {
                 //#if DEBUG
@@ -175,7 +173,6 @@ namespace HarmonyMod
 #if TRACE
                         UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod..cctor() thread={Thread.CurrentThread.ManagedThreadId} plugin={mainMod != null} initiated by {callerName}\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
 #endif
-                        //#endif
                         if (callerName == "MenuPanel.Start")
                         {
                             /* Need to call EnableOnce after the constructor returns */
@@ -208,15 +205,14 @@ namespace HarmonyMod
                     needInstallCall = false;
 #endif
                 }
-
-                // AutoEnableOnce();
             }
             catch (Exception ex)
             {
                 UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor: ({Report.ExMessage(ex, true)})");
             }
+#if HEAVY_TRACE
             UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor DONE");
-
+#endif
         }
         // Install Harmony as soon as possible to avoid problems with mods not following the guidelines
 
@@ -411,7 +407,7 @@ namespace HarmonyMod
 
             report?.ReportActivity($"Level Loaded {mode} - {meta.m_CityName} " +
                 $"({meta.m_MapName}{fileID}, ) at " +
-                $"{meta.m_startingDateTime}" +
+                $"{meta.m_currentDateTime}" +
                 $"{brokenAssets}");
             report?.OutputReport(this, false, "Level Loaded");
         }
