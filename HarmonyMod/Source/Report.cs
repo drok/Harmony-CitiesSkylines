@@ -698,6 +698,7 @@ namespace HarmonyMod
                                         optionsButton.text = m_optionsButtonOriginalText;
                                         optionsButton.eventClick -= ShowReport;
                                         optionsButton.eventClick += entry.OpenOptions;
+                                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] add OpenOptions to {entry.pluginInfo.name} 688");
                                     }
                                 }
                             }
@@ -819,13 +820,17 @@ namespace HarmonyMod
                         optionsButton.text = "REPORT";
                         optionsButton.isEnabled = true;
                         optionsButton.isVisible = true;
+
+                        // optionsButton.eventClick -= entry.OpenOptions;
                         optionsButton.eventClick -= entry.OpenOptions;
                         optionsButton.eventClick += ShowReport;
-
-                    } else
+                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] del OpenOptions to {entry.pluginInfo.name} 811");
+                    }
+                    else
                     {
                         optionsButton.text = m_optionsButtonOriginalText;
-                        optionsButton.eventClick += entry.OpenOptions;
+                        // optionsButton.eventClick -= entry.OpenOptions;
+                        // optionsButton.eventClick += entry.OpenOptions;
                         optionsButton.eventClick -= ShowReport;
                     }
                 }
