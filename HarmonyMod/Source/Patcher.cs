@@ -46,7 +46,6 @@ namespace HarmonyMod
          */
         readonly string compat_id;
         readonly Harmony compatHarmony;
-        readonly Harmony1SelfPatcher harmony1SelfPatcher;
         readonly bool foundUnsupportedHarmonyLib = false;
 
         IAmAware self;
@@ -60,7 +59,6 @@ namespace HarmonyMod
 #endif
 
             self = selfMod;
-            harmony1SelfPatcher = new Harmony1SelfPatcher();
 
             EnableHarmony();
             harmony = new Harmony(id);
@@ -72,7 +70,7 @@ namespace HarmonyMod
                 Harmony.Harmony1Patched = true;
                 try
                 {
-                    ImplementAdditionalVersionSupport(true);
+                    ImplementAdditionalVersionSupport();
                 }
                 catch (HarmonyModSupportException ex)
                 {
@@ -83,10 +81,6 @@ namespace HarmonyMod
             }
         }
 
-        internal void PatchHarmony1(Assembly assembly)
-        {
-            harmony1SelfPatcher.Apply(compatHarmony, assembly);
-        }
         bool EnableHarmony()
         {
             bool wasInitialized = Harmony.m_enabled.HasValue;
@@ -193,7 +187,7 @@ namespace HarmonyMod
             // harmony.UnpatchAll();
         }
 
-        internal void ImplementAdditionalVersionSupport(bool needHarmon1StateTransfer)
+        internal void ImplementAdditionalVersionSupport()
         {
             /* FIXME: Move this table to the API, so mods
              * can query for support at runtime.
@@ -225,14 +219,13 @@ namespace HarmonyMod
 
             /* FIXME: This should be done in order of decreasing Version */
             AppDomain.CurrentDomain.GetAssemblies()
-                .DoIf((assembly) =>
+                .Do((assembly) =>
                 {
                     var your = assembly.GetName();
                     if (your.Name == "0Harmony")
                     {
                         if (Array.Exists(harmonyVersionSupport, (supported) => supported == your.Version))
                         {
-                            return your.Version < new Version(2,0);
                         }
                         else if (your.Version < minSupportedVersion)
                         {
@@ -271,19 +264,6 @@ namespace HarmonyMod
                             unsupportedAssemblies.Add(new HarmonyModSupportException.UnsupportedAssembly(assembly, false));
                         }
                     }
-                    return false;
-                }, (a) => {
-                    try
-                    {
-                        if (needHarmon1StateTransfer)
-                            new Harmony1StateTransfer(a).Patch();
-                        PatchHarmony1(a);
-                    }
-                    catch (Exception e)
-                    {
-                        Mod.SelfReport(SelfProblemType.CompatibilityPatchesFailed, e);
-                        failures++;
-                    }
                 });
 
             if (failures != 0 || unsupportedAssemblies.Count != 0)
@@ -305,5 +285,5 @@ namespace HarmonyMod
                 e is HarmonyCHH2040::HarmonyLib.HarmonyUserException;
         }
 
-    }
-}
+            }
+        }
