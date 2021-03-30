@@ -150,7 +150,7 @@ namespace HarmonyMod
 
         internal Report report;
 
-        readonly static internal GameObject gameObject;
+        internal GameObject gameObject;
 
         internal Collection repo;
 
@@ -166,7 +166,9 @@ namespace HarmonyMod
         static Mod()
         {
             raiseExceptions = true;
+
             Resolver.Install();
+
             try
             {
                 //#if DEBUG
@@ -216,9 +218,6 @@ namespace HarmonyMod
                     needInstallCall = false;
 #endif
                 }
-
-                gameObject = new GameObject("HarmonyUpdates");
-                GameObject.DontDestroyOnLoad(gameObject);
 
             }
             catch (Exception ex)
@@ -523,8 +522,8 @@ namespace HarmonyMod
         void Deactivate()
         {
             if (mainModInstance == this)
-                if (Mod.gameObject != null)
-                    UnityEngine.Object.Destroy(Mod.gameObject);
+                if (gameObject != null)
+                    UnityEngine.Object.Destroy(gameObject);
 
 #if DEVELOPER
             /* FIXME: Implement API to provide status to other mods */
@@ -573,7 +572,7 @@ namespace HarmonyMod
                                 // I am mainmod and being deactivated
                                 mainModInstance = null;
                                 mainMod = null;
-                        }
+                            }
 #if TRACE
                             Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Standby role to Mod '{mainModName}'");
 #endif
@@ -863,6 +862,7 @@ namespace HarmonyMod
 
             return true;
         }
+
 #endregion
 
 

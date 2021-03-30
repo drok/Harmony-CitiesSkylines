@@ -10,3 +10,9 @@
 	path = MonoMod.Common
 	url = https://github.com/drok/MonoMod.Common
 	branch = maintenance-Harmony-CitiesSkylines
+[submodule "HarmonyMod/Priority-Queue"]
+	path = HarmonyMod/Priority-Queue
+	url = https://github.com/BlueRaja/High-Speed-Priority-Queue-for-C-Sharp
+[submodule "HarmonyMod/Json.NetMF"]
+	path = HarmonyMod/Json.NetMF
+	url = https://github.com/nanoframework/Json.NetMF

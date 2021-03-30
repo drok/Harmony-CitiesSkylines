@@ -1,0 +1,45 @@
+﻿/*
+ * Harmony for Cities Skylines
+ *  Copyright (C) 2021 Radu Hociung <radu.csmods@ohmi.org>
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the modified GNU General Public License as
+ *  published in the root directory of the source distribution.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  modified GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+using UnityEngine.Networking;
+
+namespace HarmonyMod
+{
+    interface IReleaseInfo
+    {
+        /* Release manager bits */
+        Hashtable packageInfo { get; set; }
+        public IEnumerable<string> files { get; set; }
+        // string dllName { get; }
+        string destDir { get; set; }
+
+        // void Enqueue(Loaded destination, Item item, bool update);
+        // void ResetDownloadData();
+
+        /* Download Manager Bits */
+        // IEnumerator<YieldInstruction> HttpHead(string url);
+        // IEnumerator<YieldInstruction> HttpGet(string url, string accept, object destination, string etag, object context, Func<UnityWebRequest, object, object, IEnumerable<YieldInstruction>> downloadHandler);
+        // IEnumerator<YieldInstruction> HttpPost(string url, string accept, Dictionary<string, string> formFields, object destination, string etag, object context, Func<UnityWebRequest, object, object, IEnumerable<YieldInstruction>> downloadHandler);
+        // void DownloadSuccess(Loaded mod, Item item, string destDir);
+    }
+}

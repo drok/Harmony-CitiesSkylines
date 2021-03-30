@@ -43,6 +43,67 @@ compatibility management, exception management, etc</Description>
 		<UserSecretsId>631fdc66-d970-44a9-9df3-895a0745b50e</UserSecretsId>
 	</PropertyGroup>
 	<ItemGroup>
+	  <Compile Remove="Json.NetMF\nuspec\**" />
+	  <Compile Remove="Json.NetMF\source\Json.NetMF\Properties\**" />
+	  <Compile Remove="Json.NetMF\source\nanoFramework.Json\**" />
+	  <Compile Remove="Json.NetMF\source\Test\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Benchmarks\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Example\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Net Standard\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue PCL\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Tests\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Unity Full\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Unity Subset\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue\Properties\**" />
+	  <EmbeddedResource Remove="Json.NetMF\nuspec\**" />
+	  <EmbeddedResource Remove="Json.NetMF\source\Json.NetMF\Properties\**" />
+	  <EmbeddedResource Remove="Json.NetMF\source\nanoFramework.Json\**" />
+	  <EmbeddedResource Remove="Json.NetMF\source\Test\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Benchmarks\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Example\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Net Standard\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue PCL\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Tests\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Unity Full\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Unity Subset\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue\Properties\**" />
+	  <None Remove="Json.NetMF\nuspec\**" />
+	  <None Remove="Json.NetMF\source\Json.NetMF\Properties\**" />
+	  <None Remove="Json.NetMF\source\nanoFramework.Json\**" />
+	  <None Remove="Json.NetMF\source\Test\**" />
+	  <None Remove="Priority-Queue\Priority Queue Benchmarks\**" />
+	  <None Remove="Priority-Queue\Priority Queue Example\**" />
+	  <None Remove="Priority-Queue\Priority Queue Net Standard\**" />
+	  <None Remove="Priority-Queue\Priority Queue PCL\**" />
+	  <None Remove="Priority-Queue\Priority Queue Tests\**" />
+	  <None Remove="Priority-Queue\Priority Queue Unity Full\**" />
+	  <None Remove="Priority-Queue\Priority Queue Unity Subset\**" />
+	  <None Remove="Priority-Queue\Priority Queue\Properties\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Priority-Queue\Priority Queue\FastPriorityQueue.cs" />
+	  <Compile Remove="Priority-Queue\Priority Queue\FastPriorityQueueNode.cs" />
+	  <Compile Remove="Priority-Queue\Priority Queue\StablePriorityQueue.cs" />
+	  <Compile Remove="Priority-Queue\Priority Queue\StablePriorityQueueNode.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="Json.NetMF\.git" />
+	  <None Remove="Json.NetMF\.gitattributes" />
+	  <None Remove="Json.NetMF\.gitignore" />
+	  <None Remove="Json.NetMF\azure-pipelines.yml" />
+	  <None Remove="Json.NetMF\CODE_OF_CONDUCT.md" />
+	  <None Remove="Json.NetMF\LICENSE" />
+	  <None Remove="Json.NetMF\README.md" />
+	  <None Remove="Json.NetMF\source\Json.NetMF\packages.config" />
+	  <None Remove="Json.NetMF\source\NuGet.Config" />
+	  <None Remove="Json.NetMF\source\version.json" />
+	  <None Remove="Priority-Queue\.git" />
+	  <None Remove="Priority-Queue\.gitignore" />
+	  <None Remove="Priority-Queue\LICENSE.txt" />
+	  <None Remove="Priority-Queue\Priority Queue\packages.config" />
+	  <None Remove="Priority-Queue\Priority Queue\Priority Queue.nuspec" />
+	  <None Remove="Priority-Queue\Priority Queue\Priority Queue.snk" />
+	  <None Remove="Priority-Queue\README.md" />
 	  <None Remove="Resources\HarmonyMod-0.9.0.1.dll" />
 	</ItemGroup>
 	<ItemGroup>
@@ -74,6 +135,10 @@ compatibility management, exception management, etc</Description>
     <Reference Include="ICities">
       <HintPath>C:\References\ICities.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>C:\References\ICSharpCode.SharpZipLib.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>C:\References\UnityEngine.dll</HintPath>
