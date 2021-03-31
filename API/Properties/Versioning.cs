@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyVersion("0.0.0.0")]
 #else
 [assembly: AssemblyVersion("0.0.0.0")]
-[assembly: AssemblyFileVersion(CitiesHarmony.API.Versioning.MyFileVersion)]
-[assembly: AssemblyInformationalVersionAttribute(CitiesHarmony.API.Versioning.MyInformationalVersion)]
+[assembly: AssemblyFileVersion(Harmony.Versioning.MyFileVersion)]
+[assembly: AssemblyInformationalVersionAttribute(Harmony.Versioning.MyInformationalVersion)]
 #endif
 
-namespace CitiesHarmony.API
+namespace Harmony
 {
     public static class Versioning
     {

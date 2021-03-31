@@ -22,7 +22,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Linq;
 using HarmonyLib;
-using CitiesHarmony.API;
 
 namespace HarmonyMod.Tests
 {
@@ -30,11 +29,11 @@ namespace HarmonyMod.Tests
     {
         public void Run()
         {
-            Harmony h = null;
-            string hid = $"ACL-API-{typeof(HarmonyHelper).Assembly.GetName().Version}";
+            HarmonyLib.Harmony h = null;
+            string hid = $"ACL-{TesterMod.APINAME}";
             try
             {
-                h = new Harmony(hid);
+                h = new HarmonyLib.Harmony(hid);
                 if (h != null)
                 {
                     AttemptProhibitedUnpatchAll(h);
@@ -48,11 +47,11 @@ namespace HarmonyMod.Tests
         }
         public void RunAfterHarmony()
         {
-            Harmony h = null;
-            string hid = $"ACL-API-{typeof(HarmonyHelper).Assembly.GetName().Version}";
+            HarmonyLib.Harmony h = null;
+            string hid = $"ACL-{TesterMod.APINAME}";
             try
             {
-                h = new Harmony(hid);
+                h = new HarmonyLib.Harmony(hid);
                 if (h != null)
                 {
                     AttemptRemoveHarmonyModPatch(h);
@@ -63,12 +62,10 @@ namespace HarmonyMod.Tests
                 throw new TestFailed("Test ACL", ex);
             }
         }
-        public void AttemptProhibitedUnpatchAll(Harmony h)
+        public void AttemptProhibitedUnpatchAll(HarmonyLib.Harmony h)
         {
             testName = "TEST/" +
-                "API/ACL1/" +
-                typeof(HarmonyHelper).Assembly.GetName().Name + " " +
-                typeof(HarmonyHelper).Assembly.GetName().Version;
+                "API/ACL1/" + TesterMod.APINAME;
 
             try
             {
@@ -89,12 +86,10 @@ namespace HarmonyMod.Tests
             }
 
         }
-        public void AttemptProhibitedPatch(Harmony h)
+        public void AttemptProhibitedPatch(HarmonyLib.Harmony h)
         {
             testName = "TEST/" +
-                "API/ACL2/" +
-                typeof(HarmonyHelper).Assembly.GetName().Name + " " +
-                typeof(HarmonyHelper).Assembly.GetName().Version;
+                "API/ACL2/" + TesterMod.APINAME;
 
             PatchProcessor processor = null;
             MethodInfo prohibitedPatch = null;
@@ -170,14 +165,12 @@ namespace HarmonyMod.Tests
             }
         }
 
-        public void AttemptRemoveHarmonyModPatch(Harmony h)
+        public void AttemptRemoveHarmonyModPatch(HarmonyLib.Harmony h)
         {
             /* Needs to run after Harmony is OnEnabled() */
 
             testName = "TEST/" +
-                "API/ACL3/" +
-                typeof(HarmonyHelper).Assembly.GetName().Name + " " +
-                typeof(HarmonyHelper).Assembly.GetName().Version;
+                "API/ACL3/" + TesterMod.APINAME;
 
             PatchProcessor processor = null;
             MethodInfo prohibitedPatch = null;
@@ -200,7 +193,7 @@ namespace HarmonyMod.Tests
                     throw new TestFailed($"Failed to create processor.");
                 }
 
-                var patches = Harmony.GetPatchInfo(target);
+                var patches = HarmonyLib.Harmony.GetPatchInfo(target);
 
                 if (patches == null)
                 {

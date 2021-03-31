@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CitiesHarmony.API
+namespace HarmonyManager
 {
 	/// <summary>An exception caused by an invalid call to the Harmony API.</summary>
 	///

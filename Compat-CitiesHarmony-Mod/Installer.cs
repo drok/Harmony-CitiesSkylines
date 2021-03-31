@@ -1,4 +1,4 @@
-﻿namespace CitiesHarmony
+﻿namespace CitiesHarmony.API
 {
     using HarmonyLib;
     using System.Diagnostics;

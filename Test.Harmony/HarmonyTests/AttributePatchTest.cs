@@ -22,7 +22,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Linq;
 using HarmonyLib;
-using CitiesHarmony.API;
 
 namespace HarmonyMod.Tests
 {
@@ -30,11 +29,11 @@ namespace HarmonyMod.Tests
     {
         public void Run()
         {
-            Harmony h = null;
-            string hid = $"AttributePatchTest-API-{typeof(HarmonyHelper).Assembly.GetName().Version}";
+            HarmonyLib.Harmony h = null;
+            string hid = "AttributePatchTest-" + TesterMod.APINAME;
             try
             {
-                h = new Harmony(hid);
+                h = new HarmonyLib.Harmony(hid);
                 h.PatchAll();
             } catch (Exception ex)
             {
@@ -59,9 +58,7 @@ namespace HarmonyMod.Tests
         public void Run(string subtest)
         {
             testName = "TEST/" +
-                "API/" +
-                typeof(HarmonyHelper).Assembly.GetName().Name + " " +
-                typeof(HarmonyHelper).Assembly.GetName().Version;
+                "API/" + TesterMod.APINAME;
 
             lastArg = UNTOUCHED;
             for (int i = 0; i < 30; i+=5)
