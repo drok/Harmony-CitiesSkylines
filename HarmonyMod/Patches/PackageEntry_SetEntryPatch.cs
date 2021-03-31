@@ -2,6 +2,7 @@
 using Harmony2::HarmonyLib;
 using JetBrains.Annotations;
 using System;
+using System.Reflection;
 
 namespace HarmonyMod.MyPatches
 {
@@ -19,5 +20,8 @@ namespace HarmonyMod.MyPatches
         {
             (Mod.mainMod.userModInstance as Mod).report.OnContentManagerSetEntry(__instance, data.pluginInfo);
         }
+
+        [UsedImplicitly]
+        static bool Prepare(MethodBase original) { return Patcher.harmonyAssembly.Count == 0; }
     }
 }

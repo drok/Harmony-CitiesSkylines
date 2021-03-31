@@ -2,6 +2,7 @@
 using Harmony2::HarmonyLib;
 using JetBrains.Annotations;
 using System;
+using System.Reflection;
 using ColossalFramework.Plugins;
 
 namespace HarmonyMod.MyPatches
@@ -23,10 +24,13 @@ namespace HarmonyMod.MyPatches
         {
             if (__exception is Exception)
             {
-                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] PluginManager.OnDestroy() threw {__exception.GetType().FullName}: {__exception.Message}\n{__exception.StackTrace}");
+                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - PluginManager.OnDestroy() threw {__exception.GetType().FullName}: {__exception.Message}\n{__exception.StackTrace}");
             }
             Mod.mainModInstance.OnPluginManagerDestroyDone();
             return null;
         }
+
+        [UsedImplicitly]
+        static bool Prepare(MethodBase original) { return Patcher.harmonyAssembly.Count == 0; }
     }
 }

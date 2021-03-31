@@ -3,6 +3,7 @@ using Harmony2::HarmonyLib;
 using JetBrains.Annotations;
 using ColossalFramework.UI;
 using System;
+using System.Reflection;
 
 namespace HarmonyMod.MyPatches
 {
@@ -27,6 +28,9 @@ namespace HarmonyMod.MyPatches
              */
             return (Mod.mainMod.userModInstance as Mod).report.TryReportPlugin(e) <= Report.MAX_EXCEPTION_PROMPTS_PER_MOD;
         }
+    
+        [UsedImplicitly]
+        static bool Prepare(MethodBase original) { return Patcher.harmonyAssembly.Count == 0; }
     }
 
     /* TODO: Hook UnityEngine.DebugLogHandler.LogException(), but it gets the same exceptions as UIView.

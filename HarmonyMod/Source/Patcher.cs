@@ -30,9 +30,10 @@ namespace HarmonyMod
     using System;
     using System.Collections.Generic;
     using System.Reflection;
+    using System.Diagnostics;
     using UnityEngine.Assertions;
 
-    public class Patcher
+    internal class Patcher
     {
         const string HARMONY_ID = "org.ohmi.harmony";
 
@@ -49,6 +50,8 @@ namespace HarmonyMod
         readonly bool foundUnsupportedHarmonyLib = false;
 
         IAmAware self;
+
+        internal static Dictionary<Version, Assembly> harmonyAssembly = new Dictionary<Version, Assembly>();
 
         internal Patcher(IAmAware selfMod, string name, bool onAwarenessCallback = false)
         {
@@ -131,6 +134,13 @@ namespace HarmonyMod
             try
             {
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+                if (harmonyAssembly.Count != 0)
+                {
+                    /* If the previous PatchAll did the state transfer, now do the other patches */
+                    harmonyAssembly.Clear();
+                    harmony.PatchAll(Assembly.GetExecutingAssembly());
+                }
 
                 if (foundUnsupportedHarmonyLib)
                     DisableHarmony();
@@ -226,6 +236,8 @@ namespace HarmonyMod
                     {
                         if (Array.Exists(harmonyVersionSupport, (supported) => supported == your.Version))
                         {
+                            harmonyAssembly[your.Version] = assembly;
+                            return your.Version < new Version(2,0);
                         }
                         else if (your.Version < minSupportedVersion)
                         {
@@ -284,6 +296,36 @@ namespace HarmonyMod
                 e is Harmony2010::HarmonyLib.HarmonyUserException ||
                 e is HarmonyCHH2040::HarmonyLib.HarmonyUserException;
         }
-
+        internal static Harmony CreateClientHarmony(string harmonyId)
+        {
+            var stack = new StackTrace();
+            var lastCaller = stack.GetFrame(0).GetMethod();
+            MethodBase caller = lastCaller;
+            int assemblyDepth = 0;
+            SameAssemblyName assemblyComparator = new SameAssemblyName(true, false, true, true);
+            /* Search in the stack for the assembly that called
+             * my caller(0Harmony 1.x)
+             */
+            for (int i = 1; i < stack.FrameCount && assemblyDepth < 2; ++i)
+            {
+                caller = stack.GetFrame(i).GetMethod();
+                if (!assemblyComparator.Equals(lastCaller.DeclaringType.Assembly.GetName(), caller.DeclaringType.Assembly.GetName()))
+                {
+                    lastCaller = caller;
+                    ++assemblyDepth;
+                }
             }
+
+            if (!Harmony.harmonyUsers.TryGetValue(caller.DeclaringType.Assembly.FullName, out var userStatus))
+            {
+                Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser() { checkBeforeUse = false, legacyCaller = true, instancesCreated = 0, };
+            }
+            return new Harmony(harmonyId, caller);
         }
+        internal static Harmony CreateClientHarmony(object oldHarmony)
+        {
+            return CreateClientHarmony(oldHarmony.GetType().GetField("id", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(oldHarmony) as string);
+        }
+
+    }
+}

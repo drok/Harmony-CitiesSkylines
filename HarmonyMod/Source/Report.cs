@@ -433,9 +433,9 @@ namespace HarmonyMod
                     if (m_removedMods.TryGetValue(key, out PluginInfo oldMod)/* || p.isEnabled*/)
                     {
                         /* Ie, for mods that are added but are broken and do not have a loadable assembly */
-                        key = p.modPath;
+                        key = oldMod.modPath;
                     }
-                    if (m_removedMods.TryGetValue(key, out PluginInfo oldMod))
+                    if (m_removedMods.TryGetValue(key, out oldMod))
                     {
                         modReport.Merge(GetReport(oldMod));
                             m_removedMods.Remove(key);

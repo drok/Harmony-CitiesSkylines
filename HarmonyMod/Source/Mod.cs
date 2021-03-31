@@ -644,7 +644,7 @@ namespace HarmonyMod
             if (!Harmony.Harmony1Patched)
             {
                 Harmony.Harmony1Patched = true;
-                new Patcher(this, "Compatibility", true).ImplementAdditionalVersionSupport(needHarmon1StateTransfer);
+                new Patcher(this, "Compatibility", true).ImplementAdditionalVersionSupport();
             }
         }
 

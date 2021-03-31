@@ -3,6 +3,7 @@ using Harmony2::HarmonyLib;
 using JetBrains.Annotations;
 using ColossalFramework.UI;
 using System;
+using System.Reflection;
 
 namespace HarmonyMod.MyPatches
 {
@@ -28,6 +29,9 @@ namespace HarmonyMod.MyPatches
             Mod.mainModInstance?.report.TryReportPlugin(exception);
             return true;
         }
+
+        [UsedImplicitly]
+        static bool Prepare(MethodBase original) { return Patcher.harmonyAssembly.Count == 0; }
     }
 
     [HarmonyPatch(typeof(UnityEngine.Debug), "LogException", new Type[] { typeof(Exception), typeof(UnityEngine.Object),})]
@@ -51,5 +55,8 @@ namespace HarmonyMod.MyPatches
             Mod.mainModInstance?.report.TryReportPlugin(exception);
             return true;
         }
+
+        [UsedImplicitly]
+        static bool Prepare(MethodBase original) { return Patcher.harmonyAssembly.Count == 0; }
     }
 }

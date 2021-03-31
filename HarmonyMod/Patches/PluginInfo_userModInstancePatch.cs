@@ -13,7 +13,7 @@ namespace HarmonyMod.MyPatches
 {
 
     [HarmonyPatch(typeof(PluginInfo), "get_userModInstance", new Type[] { })]
-    internal class PluginManager_userModInstancePatch
+    internal class PluginInfo_userModInstancePatch
     {
         [HarmonyPrefix]
         [UsedImplicitly]
@@ -80,5 +80,8 @@ namespace HarmonyMod.MyPatches
 
 			return null;
         }
-    }
+	
+		[UsedImplicitly]
+		static bool Prepare(MethodBase original) { return Patcher.harmonyAssembly.Count == 0; }
+	}
 }
