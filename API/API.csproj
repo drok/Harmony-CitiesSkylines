@@ -45,9 +45,15 @@
       <HintPath>C:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="IAmAware">
-      <HintPath>C:\References\IAmAware-0.0.0.0.dll</HintPath>
+    <Reference Include="IAmAware-0.0.2.0">
+      <HintPath>C:\References\IAmAware-0.0.2.0.dll</HintPath>
       <Private>false</Private>
+      <Aliases>IAwareness2</Aliases>
+    </Reference>
+    <Reference Include="IAmAware-0.0.1.0">
+      <HintPath>C:\References\IAmAware-0.0.1.0.dll</HintPath>
+      <Private>false</Private>
+      <Aliases>IAwareness1</Aliases>
     </Reference>
     <Reference Include="ICities">
       <HintPath>C:\References\ICities.dll</HintPath>

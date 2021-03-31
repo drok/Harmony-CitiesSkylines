@@ -82,7 +82,7 @@ compatibility management, exception management, etc</Description>
       <Private>False</Private>
     </Reference>
     <Reference Include="IAmAware">
-      <HintPath>C:\References\IAmAware-0.0.1.0.dll</HintPath>
+      <HintPath>C:\References\IAmAware-0.0.2.0.dll</HintPath>
       <Aliases></Aliases>
       <Private Condition="'$(Configuration)'!='Developer-Updater' and '$(Configuration)'!='Developer'">true</Private>
       <Private Condition="'$(Configuration)'=='Developer-Updater' or '$(Configuration)'=='Developer'">false</Private>
