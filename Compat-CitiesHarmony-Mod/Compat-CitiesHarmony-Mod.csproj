@@ -18,7 +18,7 @@
   <PropertyGroup>
     <DelaySign>false</DelaySign>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\HarmonyMod\Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'!='Release'">
     <Optimize>false</Optimize>
@@ -36,11 +36,11 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
-	<PropertyGroup>
-		<DelaySign>false</DelaySign>
-		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
-	</PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>false</DelaySign>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\HarmonyMod\Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -57,6 +57,7 @@
     <ProjectReference Include="..\Harmony-v2\Harmony\Harmony-v2.csproj">
       <Project>{608c45f0-e72f-4436-b9ea-4d108b42313b}</Project>
       <Name>Harmony-v2</Name>
+      <Aliases>Harmony2</Aliases>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

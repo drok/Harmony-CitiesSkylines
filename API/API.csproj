@@ -7,7 +7,7 @@
     <Company>Radu Hociung</Company>
     <Description>Auto-installs and gives access to the Harmony Mod from the Steam Workshop</Description>
     <Copyright>Copyright 2021 Radu Hociung</Copyright>
-    <Version>0.9.0</Version>
+    <Version>0.9.0.39</Version>
     <Authors>Radu Hociung</Authors>
     <PackageId>Harmony-CitiesSkylines</PackageId>
     <PackageProjectUrl>https://github.com/drok/Harmony-CitiesSkylines</PackageProjectUrl>
@@ -29,7 +29,7 @@
 	<PropertyGroup>
 		<DelaySign>false</DelaySign>
 		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+		<AssemblyOriginatorKeyFile>..\HarmonyMod\Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
 		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
 		<UserSecretsId>631fdc66-d970-44a9-9df3-895a0745b50e</UserSecretsId>
 	</PropertyGroup>
@@ -56,19 +56,19 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>G:\References\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="ColossalManaged">
-      <HintPath>C:\References\ColossalManaged.dll</HintPath>
+      <HintPath>G:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ICities">
-      <HintPath>C:\References\ICities.dll</HintPath>
+      <HintPath>G:\References\ICities.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>C:\References\UnityEngine.dll</HintPath>
+      <HintPath>G:\References\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

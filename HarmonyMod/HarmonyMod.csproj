@@ -73,27 +73,21 @@ compatibility management, exception management, etc</Description>
       <Private Condition="'$(Configuration)'=='Developer-Updater' or '$(Configuration)'=='Developer'">false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+    <ProjectReference Include="..\IAmAware\IAwareness0.csproj" />
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
+      <HintPath>G:\References\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ColossalManaged">
-      <HintPath>C:\References\ColossalManaged.dll</HintPath>
+      <HintPath>G:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="IAmAware">
-      <HintPath>C:\References\IAmAware-0.0.2.0.dll</HintPath>
-      <Aliases></Aliases>
-      <Private Condition="'$(Configuration)'!='Developer-Updater' and '$(Configuration)'!='Developer'">true</Private>
-      <Private Condition="'$(Configuration)'=='Developer-Updater' or '$(Configuration)'=='Developer'">false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-	</Reference>
     <Reference Include="ICities">
-      <HintPath>C:\References\ICities.dll</HintPath>
+      <HintPath>G:\References\ICities.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>C:\References\UnityEngine.dll</HintPath>
+      <HintPath>G:\References\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
