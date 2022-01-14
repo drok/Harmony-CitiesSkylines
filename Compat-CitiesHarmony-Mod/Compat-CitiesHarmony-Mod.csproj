@@ -19,6 +19,7 @@
     <DelaySign>false</DelaySign>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\HarmonyMod\Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+	<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'!='Release'">
     <Optimize>false</Optimize>

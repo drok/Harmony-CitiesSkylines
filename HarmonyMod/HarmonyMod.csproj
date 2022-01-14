@@ -33,6 +33,7 @@ compatibility management, exception management, etc</Description>
 		<Copyright>2021</Copyright>
 		<RepositoryUrl>https://github.com/drok/Harmony-CitiesSkylines</RepositoryUrl>
 	  <LangVersion>latest</LangVersion>
+	  <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
   </PropertyGroup>
 	<PropertyGroup>
 		<DelaySign>false</DelaySign>
