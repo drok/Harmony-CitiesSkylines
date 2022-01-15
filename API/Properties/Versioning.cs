@@ -10,9 +10,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyInformationalVersionAttribute("0.9.0")]
 #endif
 
-namespace Harmony
+namespace HarmonyManager
 {
-    public static class Versioning
+    internal static class Versioning
     {
         public const string PACKAGE_NAME = "Harmony.API";
 #if RELEASE

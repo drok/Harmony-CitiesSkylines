@@ -11,7 +11,7 @@
 	<PropertyGroup>
 		<DelaySign>false</DelaySign>
 		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>..\HarmonyMod\Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
 		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'!='Release'">
@@ -29,18 +29,18 @@
 
 	<ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>G:\References\Assembly-CSharp.dll</HintPath>
+      <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ColossalManaged">
-      <HintPath>G:\References\ColossalManaged.dll</HintPath>
+      <HintPath>C:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="IAmAware">
       <HintPath>C:\References\IAmAware-0.0.1.0.dll</HintPath>
     </Reference>
     <Reference Include="ICities">
-      <HintPath>G:\References\ICities.dll</HintPath>
+      <HintPath>C:\References\ICities.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">

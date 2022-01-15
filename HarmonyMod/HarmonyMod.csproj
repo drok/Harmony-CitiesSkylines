@@ -54,7 +54,6 @@ compatibility management, exception management, etc</Description>
     </ProjectReference>
     <ProjectReference Include="..\Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\Compat-CitiesHarmony.Harmony-2.0.4.0.csproj">
       <Aliases>HarmonyCHH2040</Aliases>
-      <Private>false</Private>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\Compat-Harmony-2.0.0.9\Harmony\Compat-Harmony-2.0.0.9.csproj">
@@ -127,7 +126,7 @@ compatibility management, exception management, etc</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>DEBUG;TRACE;HEAVY_TRACE</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;HEAVY_TRACE;UNITY_ASSERTIONS</DefineConstants>
   </PropertyGroup>
 
 	<ItemGroup Condition="'$(Configuration)'=='Developer-Updater'">
@@ -140,39 +139,14 @@ compatibility management, exception management, etc</Description>
 			<Link>HarmonyMod_helper_pdb</Link>
 		</Content>
 	</ItemGroup>
-	<ItemGroup Condition="'$(Configuration)'!='Developer' and '$(Configuration)'!='Developer-Updater'">
-		<Content Include="..\Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\bin\$(Configuration)\$(TargetFramework)\CitiesHarmony.Harmony.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>CitiesHarmony.Harmony-2.0.4.0.dll</Link>
-		</Content>
-		<Content Include="..\Compat-Harmony-2.0.0.9\Harmony\bin\$(Configuration)\$(TargetFramework)\0Harmony.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>0Harmony-2.0.0.9.dll</Link>
-		</Content>
-		<Content Include="..\Compat-Harmony-2.0.1.0\Harmony\bin\$(Configuration)\$(TargetFramework)\0Harmony.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>0Harmony-2.0.1.0.dll</Link>
-		</Content>
-	</ItemGroup>
-	<ItemGroup Condition="'$(Configuration)'=='Beta' or '$(Configuration)'=='Debug'">
-		<Content Include="..\Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\bin\$(Configuration)\$(TargetFramework)\CitiesHarmony.Harmony.pdb">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>CitiesHarmony.Harmony-2.0.4.0.pdb</Link>
-		</Content>
-		<Content Include="..\Compat-Harmony-2.0.0.9\Harmony\bin\$(Configuration)\$(TargetFramework)\0Harmony.pdb">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>0Harmony-2.0.0.9.pdb</Link>
-		</Content>
-		<Content Include="..\Compat-Harmony-2.0.1.0\Harmony\bin\$(Configuration)\$(TargetFramework)\0Harmony.pdb">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>0Harmony-2.0.1.0.pdb</Link>
-		</Content>
-	</ItemGroup>
 
+	<!-- Gihub Release:
+			gh release create v2.2 - -title "Release no. 2.2" - -notes "4rd release" - -target maintenance-0.9 bin/Harmony-CitiesSkylines-Debug.zip\#"Mod Archive" bin/Thumbnail.png\#"Simple Thumbnail"
+	-->
 	<Target Name="DeployToModDirectory" AfterTargets="Build" Condition="'$(Configuration)'!='Developer'">
-    <PropertyGroup>
-      <ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(SolutionName)-$(Configuration)\</ModDirectory>
-    </PropertyGroup>
+	<PropertyGroup>
+		<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(SolutionName)-$(Configuration)\</ModDirectory>
+	</PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Developer-Updater'">
       <ModFiles Include="$(TargetDir)$(TargetName).dll" />
@@ -184,9 +158,10 @@ compatibility management, exception management, etc</Description>
     <ItemGroup Condition="'$(Configuration)'!='Developer' and '$(Configuration)'!='Developer-Updater'">
 	  <ModFiles Include="$(TargetDir)*.dll" />
       <ModFiles Include="$(TargetDir)*.pdb" />
+      <ModFiles Include="$(TargetDir)*.dll.config" />
     </ItemGroup>
 
-	  <Message Text="Installing to Local Mod directory as $(SolutionName)-$(Configuration)" />
+		<Message Text="Installing to Local Mod directory as $(SolutionName)-$(Configuration)" />
     <!-- <RemoveDir Directories="$(ModDirectory)" /> -->
     <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModDirectory)" />
   </Target>

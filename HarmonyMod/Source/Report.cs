@@ -85,19 +85,15 @@ namespace HarmonyMod
 
         private static readonly HashSet<string> manifest = new HashSet<string>
         {
-            "0Harmony, Version=2.0.0.9",
-            "0Harmony, Version=2.0.1.0",
-            "0Harmony, Version=2.0.4.0",
-            "CitiesHarmony.Harmony, Version=2.0.4.0",
-            "IAmAware, Version=0.0.2.0",
+            "0Harmony, Version=2.0.400.0",
+            "CitiesHarmony.Harmony, Version=2.0.400.0",
+            "IAmAware, Version=0.0.1.0",
             "CitiesHarmony, Version=0.0.0.0",
             // "Mono.Cecil, Version=0.10.4.0",
             // "Mono.Cecil.Mdb, Version=0.10.4.0",
             // "Mono.Cecil.Pdb, Version=0.10.4.0",
             // "Mono.Cecil.Rocks, Version=0.10.4.0",
             // "MonoMod.Common, Version=22.1.16.0",
-            /* FIXME: Sign LibGit2Sharp */
-            // "LibGit2Sharp, Version=0.17.0.0",
         };
 
         string m_optionsButtonOriginalText = null;

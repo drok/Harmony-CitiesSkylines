@@ -25,10 +25,10 @@ namespace HarmonyMod
 {
     public static class Versioning
     {
-        public const string ReleaseStr = "3";
-        public const uint ImplementationVersion = 0x00090003;
-        public const string MyAssemblyVersion = "1.0.0." + ReleaseStr + ReleaseTypeStr;
-        public const string MyFileVersion = "0.9";
+        public const string ReleaseStr = "0";
+        public const uint ImplementationVersion = 0x000a0000;
+        public const string MyAssemblyVersion = "1.0.1." + ReleaseStr + ReleaseTypeStr;
+        public const string MyFileVersion = "1.0";
         public const string PACKAGE_NAME = "Harmony";
 #if DEBUG
         public const string PUBLISH_URL = "http://pro41.ohmisim.ohmi.org/drok/Harmony-CitiesSkylines";
@@ -36,6 +36,7 @@ namespace HarmonyMod
         public const string PUBLISH_URL = "https://github.com/drok/Harmony-CitiesSkylines";
 #endif
         public const string ISSUES_URL = PUBLISH_URL + "/issues";
+        public const string RELEASE_BRANCH = "maintenance-1.0";
 
 
         public struct Obsolescence

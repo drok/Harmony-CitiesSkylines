@@ -205,6 +205,7 @@ namespace HarmonyMod
                 new Version(2, 0, 0, 9),
                 new Version(2, 0, 1, 0),
                 new Version(2, 0, 4, 0),
+                new Version(2, 0, 400, 0),
             };
 
             /* Official support cut-off. Above this version, I will implement support.
@@ -232,7 +233,6 @@ namespace HarmonyMod
                         if (Array.Exists(harmonyVersionSupport, (supported) => supported == your.Version))
                         {
                             harmonyAssembly[your.Version] = assembly;
-                            return your.Version < new Version(2,0);
                         }
                         else if (your.Version < minSupportedVersion)
                         {
