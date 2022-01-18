@@ -540,8 +540,15 @@ namespace HarmonyMod
 #endif
                         } else
                         {
-                            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Standby role to Mod '{mainModName}'");
+                            if (!enabled)
+                            {
+                                // I am mainmod and being deactivated
+                                mainModInstance = null;
+                                mainMod = null;
                             }
+                            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Standby role to Mod '{mainModName}'");
+#endif
+                        }
 
 
                         if (enabled)
@@ -560,7 +567,7 @@ namespace HarmonyMod
                         OnActive();
                     }
 
-                    Assert.IsTrue(mainMod.userModInstance is IAmAware,
+                    IsTrue(mainMod == null || mainMod.userModInstance is IAmAware,
                         "Only IAmAware instances can be main mods");
                     IsFalse(enabled && handover.isMainMod,
                         "Notified instance should concur that it is no longer the main Mod");
@@ -664,7 +671,24 @@ namespace HarmonyMod
 
         bool IAmAware.DoOnHarmonyReady(List<ClientCallback> callbacks)
         {
-            callbacks.Do((c) => c.action());
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady() mainModInstance={mainModInstance?.Name ?? "none"}");
+            if (mainModInstance != selfPlugin.userModInstance)
+            {
+                Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady() mainModInstance={mainModInstance?.Name ?? "none"}");
+                return mainModInstance != null && 
+                    (mainModInstance as IAmAware).DoOnHarmonyReady(callbacks);
+            }
+
+            callbacks.Do((c) =>
+            {
+                var caller = c.callStack.GetFrame(0).GetMethod();
+                Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady caller = {caller.FullDescription()}");
+                if (!Harmony.harmonyUsers.TryGetValue(caller.DeclaringType.Assembly.FullName, out var userStatus))
+                {
+                    Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser() { instancesCreated = 0, checkBeforeUse = true, };
+                }
+                c.action();
+            });
 
             return true;
         }

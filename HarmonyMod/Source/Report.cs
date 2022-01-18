@@ -89,7 +89,7 @@ namespace HarmonyMod
             "0Harmony, Version=2.0.1.0",
             "0Harmony, Version=2.0.4.0",
             "CitiesHarmony.Harmony, Version=2.0.4.0",
-            "IAmAware, Version=0.0.1.0",
+            "IAmAware, Version=0.0.2.0",
             "CitiesHarmony, Version=0.0.0.0",
             // "Mono.Cecil, Version=0.10.4.0",
             // "Mono.Cecil.Mdb, Version=0.10.4.0",

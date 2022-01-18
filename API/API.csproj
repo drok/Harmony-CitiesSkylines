@@ -33,6 +33,24 @@
 		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
 		<UserSecretsId>631fdc66-d970-44a9-9df3-895a0745b50e</UserSecretsId>
 	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'!='Release'">
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<Optimize>true</Optimize>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<DefineConstants>CALLBACK_UNAVAILABLE_ON_DISABLED_HARMONY</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DefineConstants>DEBUG;TRACE;HEAVY_TRACE;MODMANAGER;UNITY_ASSERTIONS;CALLBACK_UNAVAILABLE_ON_DISABLED_HARMONY</DefineConstants>
+	</PropertyGroup>
+
 	<ItemGroup>
     <None Include="package_icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
@@ -44,16 +62,6 @@
     <Reference Include="ColossalManaged">
       <HintPath>C:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="IAmAware-0.0.2.0">
-      <HintPath>C:\References\IAmAware-0.0.2.0.dll</HintPath>
-      <Private>false</Private>
-      <Aliases>IAwareness2</Aliases>
-    </Reference>
-    <Reference Include="IAmAware-0.0.1.0">
-      <HintPath>C:\References\IAmAware-0.0.1.0.dll</HintPath>
-      <Private>false</Private>
-      <Aliases>IAwareness1</Aliases>
     </Reference>
     <Reference Include="ICities">
       <HintPath>C:\References\ICities.dll</HintPath>
@@ -73,4 +81,15 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\IAmAware\IAwareness0.csproj">
+	    <Private>false</Private>
+	    <PrivateAssets>all</PrivateAssets>
+	  </ProjectReference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Runtime.Serialization">
+	    <Private>true</Private>
+	  </Reference>
+	</ItemGroup>
 </Project>
