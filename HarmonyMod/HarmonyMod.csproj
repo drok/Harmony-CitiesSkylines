@@ -54,17 +54,6 @@ compatibility management, exception management, etc</Description>
     </ProjectReference>
     <ProjectReference Include="..\Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\Compat-CitiesHarmony.Harmony-2.0.4.0.csproj">
       <Aliases>HarmonyCHH2040</Aliases>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\Compat-Harmony-2.0.0.9\Harmony\Compat-Harmony-2.0.0.9.csproj">
-      <Aliases>Harmony2009</Aliases>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\Compat-Harmony-2.0.1.0\Harmony\Compat-Harmony-2.0.1.0.csproj">
-      <Aliases>Harmony2010</Aliases>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\Harmony-v2\Harmony\Harmony-v2.csproj">
       <Aliases>Harmony2</Aliases>

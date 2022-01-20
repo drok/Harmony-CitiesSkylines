@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.SceneManagement;
 using static UnityEngine.Debug;
 using static UnityEngine.Assertions.Assert;
 using Harmony2::HarmonyLib;
@@ -76,6 +77,7 @@ namespace HarmonyMod
         readonly Dictionary<PluginInfo, ModReportBase> m_modReports;
         readonly Dictionary<string, PluginInfo> m_removedMods;
         readonly Dictionary<string, List<Assembly>> m_pathToAssemblyMap;
+        readonly Dictionary<string, PluginInfo> m_Plugins;
 
         readonly HashSet<AssemblyName> haveAssemblies;
         readonly HashSet<AssemblyName> missingAssemblies;
@@ -83,6 +85,12 @@ namespace HarmonyMod
 
         readonly List<string> activities;
 
+        static internal readonly HashSet<string> myProvidedLibs = new HashSet<string>
+        {
+            "0Harmony",
+            "CitiesHarmony.Harmony",
+            // "CitiesHarmony.API",
+        };
         private static readonly HashSet<string> manifest = new HashSet<string>
         {
             "0Harmony, Version=2.0.400.0",
@@ -125,7 +133,10 @@ namespace HarmonyMod
             missingAssemblies = new HashSet<AssemblyName>(new SameAssemblyName());
             activities = new List<string>();
 
-            // #endif
+            m_Plugins = (Dictionary<string, PluginInfo>)typeof(PluginManager)
+                .GetField("m_Plugins", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
+                .GetValue(Singleton<PluginManager>.instance);
+
             /* Looping twice because on the 2nd loop when the modReport is constructed for self,
              * the list of haveAssemblies must already exist;
              */
@@ -237,6 +248,7 @@ namespace HarmonyMod
 #if HEAVY_TRACE
             LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.PrepareReport()");
 #endif
+            // var harmonyUsers = Harmony.harmonyUsers;
             foreach (PluginInfo mod in Singleton<PluginManager>.instance.GetPluginsInfo())
             {
                 if (mod.isBuiltin)
@@ -249,10 +261,19 @@ namespace HarmonyMod
                 mod.GetAssemblies()
                     .Exists((a) =>
                     {
-                        if (Harmony.harmonyUsers.TryGetValue(a.FullName, out var modStatus))
+#if HEAVY_TRACE
+                        LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO:     Check {a.GetName().FullName}");
+#endif
+                        if (harmonyUsers.TryGetValue(a.FullName, out var modStatus))
                         {
+#if HEAVY_TRACE
+                            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO:        is user checkbeforeuse={modStatus.checkBeforeUse}");
+#endif
                             if (!modStatus.checkBeforeUse && !modStatus.legacyCaller)
                             {
+#if HEAVY_TRACE
+                                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO:        reporting problem");
+#endif
                                 var ex = GetAPIMisuseException(a.GetName(), out var reason);
                                 modReport.ReportProblem(ModReport.ProblemType.GenericProblem, ex);
                             }
@@ -260,6 +281,7 @@ namespace HarmonyMod
                         }
                         return false;
                     });
+#endif
                 if (!showOnlyProblems || modReport.numProblems != 0)
                 {
                     totalProblems += modReport.numProblems;
@@ -615,12 +637,20 @@ namespace HarmonyMod
             }
         }
 
+        internal void OnScene(Scene scene, LoadSceneMode loadMode)
+        {
+            if (scene.name == "MainMenu")
+            {
+                OnModsLoaded();
+            }
+        }
+
         internal void OnEnabled()
         {
             CheckConflicts();
 
             Singleton<PluginManager>.instance.eventPluginsChanged += UpdateReport;
-            Singleton<LoadingManager>.instance.m_introLoaded += OnModsLoaded;
+            SceneManager.sceneLoaded += OnScene;
 
             try
             {
@@ -665,7 +695,7 @@ namespace HarmonyMod
             try
             {
                 Singleton<PluginManager>.instance.eventPluginsChanged -= UpdateReport;
-                Singleton<LoadingManager>.instance.m_introLoaded -= OnModsLoaded;
+                SceneManager.sceneLoaded -= OnScene;
 
                 OutputReport(self.userModInstance as Mod, true);
 
@@ -827,7 +857,9 @@ namespace HarmonyMod
                         // optionsButton.eventClick -= entry.OpenOptions;
                         optionsButton.eventClick -= entry.OpenOptions;
                         optionsButton.eventClick += ShowReport;
-                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] del OpenOptions to {entry.pluginInfo.name} 811");
+#if HEAVY_TRACE
+                        LogError($"[{Versioning.FULL_PACKAGE_NAME}] del OpenOptions to {entry.pluginInfo.name}");
+#endif
                     }
                     else
                     {
@@ -1203,13 +1235,57 @@ namespace HarmonyMod
         }
 
 #if TRACE
+        internal static PluginInfo FindCallerMod(System.Diagnostics.StackTrace stackTrace, out AssemblyName guiltyAssembly)
+        {
+            PluginInfo origin = null;
+            AssemblyName from = default(AssemblyName);
+
+            LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - FindCallerMod searches:\n{stackTrace.ToString()}");
+
+            if (stackTrace.GetFrames().Any((x) =>
+            {
+                // var allmods = (Singleton<PluginManager>.instance.GetPluginsInfo() ?? 
+                //     Enumerable.Empty<PluginInfo>())
+                //     .Concat(Singleton<PluginManager>.instance.GetCameraPluginInfos() ??
+                //     Enumerable.Empty<PluginInfo>());
+                var callerAssembly = x.GetMethod().ReflectedType.Assembly;
+
+                // var mod = allmods.FirstOrDefault((p) => p.ContainsAssembly(callerAssembly));
+                var mod = Mod.mainModInstance.report.m_Plugins.Values.FirstOrDefault((p) => p.ContainsAssembly(callerAssembly));
+                if (mod != null)
+                {
+                    origin = mod;
+                    from = callerAssembly.GetName();
+                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - FindCallerMod found: {x.GetMethod().FullDescription()}");
+                    return true;
+                }
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - FindCallerMod did not find: {callerAssembly.GetName().FullName}");
+                return false;
+            }))
+            {
+                guiltyAssembly = from;
+            } else
+            {
+                guiltyAssembly = default(AssemblyName);
+            }
+
+            return origin;
+        }
+#if TRACE
         internal static PluginInfo FindCallOrigin(System.Diagnostics.StackTrace stackTrace)
         {
             PluginInfo origin = null;
+
             stackTrace.GetFrames().ForEach((x) =>
             {
+                /* FIXME: 
+                 * Use above concat code. FindPluginInfo only searches enabled plugins
+                 */
                 var mod = Singleton<PluginManager>.instance.FindPluginInfo(x.GetMethod().ReflectedType.Assembly);
-                if (mod != null) origin = mod;
+                if (mod != null)
+                {
+                    origin = mod;
+                }
             });
             return origin;
         }
@@ -1223,6 +1299,43 @@ namespace HarmonyMod
         {
             GetReport(plugin).ReportProblem(problem, ex, detail);
         }
+
+        internal void ReportPlugin(ModReport.ProblemType problem, Exception ex, int skipframes, out AssemblyName guiltyMod, string detail = null)
+        {
+            var plugin = FindCallerMod(new System.Diagnostics.StackTrace(skipframes + 1, true), out guiltyMod);
+            if (plugin != null)
+                GetReport(plugin).ReportProblem(problem, ex, detail);
+            else
+            {
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - no responsible mod found; detail: {Report.ExMessage(ex.InnerException, true, 1)}");
+                TryReportPlugin(ex);
+            }
+
+        }
+        internal void ReportPlugin(ModReport.ProblemType problem, Exception ex, int skipframes, out AssemblyName guiltyMod, AssemblyName assemblyName)
+        {
+            var plugin = FindCallerMod(new System.Diagnostics.StackTrace(skipframes + 1, true), out guiltyMod);
+            if (plugin != null)
+                GetReport(plugin).ReportProblem(problem, ex, assemblyName);
+            else
+            {
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - no responsible mod found; detail: {Report.ExMessage(ex.InnerException, true, 1)}");
+                TryReportPlugin(ex);
+            }
+        }
+        internal void ReportPlugin(ModReport.ProblemType problem, AssemblyName modAssembly, Exception ex)
+        {
+            var plugin = Mod.mainModInstance.report.m_Plugins.Values.FirstOrDefault((p) => p.ContainsAssembly(modAssembly));
+
+            if (plugin != null)
+                GetReport(plugin).ReportProblem(problem, ex);
+            else
+            {
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - no responsible mod found; detail: {Report.ExMessage(ex.InnerException, true, 1)}");
+                TryReportPlugin(ex);
+            }
+        }
+
 
         internal void ReportActivity (string activity)
         {

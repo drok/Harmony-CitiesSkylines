@@ -33,5 +33,9 @@ namespace HarmonyMod
 			: base(message)
         {
         }
+		public HarmonyModACLException(string message, Exception innerException)
+			: base(message, innerException)
+		{
+		}
 	}
 }

@@ -41,10 +41,6 @@ namespace HarmonyMod.MyPatches
 			var m_UserModInstance = userModInstance.Value;
 			List<Assembly> m_Assemblies = inst.Field<List<Assembly>>("m_Assemblies").Value;
 
-// #if HEAVY_TRACE
-// 			UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] PluginInfo.get_userModInstance() for {__instance.name} called from \n{new System.Diagnostics.StackTrace(true)}"); // : {__exception.Message}\n{__exception.StackTrace}");
-// #endif
-
 			__result = null;
 			if (m_UserModInstance == null)
 			{
@@ -81,7 +77,7 @@ namespace HarmonyMod.MyPatches
 					(__exception as ReflectionTypeLoadException).LoaderExceptions.Do(
 						(e) =>
 						{
-							e.HelpLink = "https://github.com/drok/Harmony-CitiesSkylines/issues/9";
+							e.HelpLink = $"{Versioning.ISSUES_URL}/9";
 							Mod.mainModInstance.report.ReportPlugin(__instance, ModReport.ProblemType.ExceptionThrown, e, $"{e.GetType().Name}: {e.Message}");
 							UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] {__instance.name} threw: {e.GetType().Name}: {e.Message}");
 						});
@@ -89,9 +85,6 @@ namespace HarmonyMod.MyPatches
 				else
 				{
 					Mod.mainModInstance.report.ReportPlugin(__instance, ModReport.ProblemType.ExceptionThrown, __exception, $"while instatiating: {__exception.Message}");
-#if TRACE
-					UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] PluginInfo.get_userModInstance() for {__instance.name} threw {__exception.GetType().FullName}");
-#endif
 				}
 			}
 

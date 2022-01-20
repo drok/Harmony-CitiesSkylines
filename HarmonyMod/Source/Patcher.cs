@@ -106,10 +106,6 @@ namespace HarmonyMod
         {
             IsFalse(initialized_,
                 "Should not call Patcher.Install() more than once");
-#if TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Installing patches as {id}");
-#endif
-
             try
             {
                 EnableHarmony();
@@ -148,11 +144,6 @@ namespace HarmonyMod
         {
             IsTrue(initialized_,
                 "Should not call Patcher.Uninstall() more than once");
-
-#if TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Removing patches as {id}");
-#endif
-
             IsNotNull(harmony, "HarmonyInst != null");
             try
             {
@@ -160,9 +151,6 @@ namespace HarmonyMod
                     EnableHarmony();
 
                 harmony.UnpatchAll(id);
-#if TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Patches for {id} were removed");
-#endif
 
                 /* FIXME: When harmonymod is removed last, it's
                  * safe to also remove Harmon1 patches.
@@ -171,9 +159,6 @@ namespace HarmonyMod
                  */
                 if (foundUnsupportedHarmonyLib)
                     DisableHarmony();
-#if TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Harmony Disabled");
-#endif
             }
             catch (Exception e)
             {
@@ -295,7 +280,7 @@ namespace HarmonyMod
             var lastCaller = stack.GetFrame(0).GetMethod();
             MethodBase caller = lastCaller;
             int assemblyDepth = 0;
-            SameAssemblyName assemblyComparator = new SameAssemblyName(true, false, true, true);
+            SameAssemblyName assemblyComparator = new SameAssemblyName(SameAssemblyName.VersionComparison.Exact, false, true, true);
             /* Search in the stack for the assembly that called
              * my caller(0Harmony 1.x)
              */

@@ -101,7 +101,7 @@ namespace HarmonyMod
                                     break;
                             }
 
-                            if (!haveAssemblies.Contains(assemblyName))
+                            if (!haveAssemblies.Contains(assemblyName) && !Report.myProvidedLibs.Contains(assemblyName.Name))
                             {
                                 m_missingAssemblies.Add(assemblyName);
                             }

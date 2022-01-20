@@ -58,6 +58,14 @@ namespace HarmonyMod
              * after this version
              */
             public const uint PROHIBIT_API_MISUSE_AFTER = 0x01010000;
+
+            /* The Assembly resolver will block mods that exploit the
+             * game's resolver vulnerability after this version.
+             * See https://github.com/drok/Harmony-CitiesSkylines/issues/18
+             */
+            public const uint PROHIBIT_RESOLVER_EXPLOIT_AFTER = 0x01010000;
+
+
         }
 
         public static string VersionString(uint number)

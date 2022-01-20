@@ -15,17 +15,24 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+using System;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace HarmonyMod
 {
-
+    [Serializable]
     internal class SameAssemblyName : IEqualityComparer<AssemblyName>
     {
+        public enum VersionComparison
+        {
+            MajorMinor = 0,
+            Exact,
+            Any,
+        }
 
-        readonly bool m_compareVersion;
+        readonly VersionComparison m_compareVersion;
         readonly bool m_compareToken;
         readonly bool m_compareName;
         readonly bool m_compareCulture;
@@ -35,10 +42,10 @@ namespace HarmonyMod
         {
             m_compareName = true;
             m_compareToken = true;
-            m_compareVersion = true;
+            m_compareVersion = VersionComparison.Exact;
             m_satisfyStrongName = false;
         }
-        public SameAssemblyName(bool compareVersion, bool compareToken, bool compareName, bool compareCulture)
+        public SameAssemblyName(VersionComparison compareVersion, bool compareToken, bool compareName, bool compareCulture)
         {
             m_compareVersion = compareVersion;
             m_compareToken = compareToken;
@@ -58,7 +65,11 @@ namespace HarmonyMod
         public bool Equals(AssemblyName a, AssemblyName b)
         {
             bool result = (!m_compareName || a.Name.Equals(b.Name)) &&
-                (!m_compareVersion || a.Version.Equals(b.Version)) &&
+                (
+                    (m_compareVersion == VersionComparison.Exact || a.Version.Equals(b.Version)) ||
+                    (m_compareVersion == VersionComparison.MajorMinor || (a.Version.Major == b.Version.Major && a.Version.Minor == b.Version.Minor)) ||
+                    (m_compareVersion == VersionComparison.Any)
+                ) &&
                 (!m_compareToken || (a.GetPublicKeyToken().Length == 0 && (!m_satisfyStrongName || b.GetPublicKeyToken().Length == 0)) ||
                 (a.GetPublicKeyToken().SequenceEqual(b.GetPublicKeyToken()))) &&
                 (!m_compareCulture || a.CultureInfo.Equals(b.CultureInfo));

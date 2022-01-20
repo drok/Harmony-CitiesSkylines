@@ -16,8 +16,6 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 extern alias Harmony2;
-extern alias Harmony2009;
-extern alias Harmony2010;
 extern alias HarmonyCHH2040;
 using JetBrains.Annotations;
 using IAwareness;
@@ -344,6 +342,10 @@ namespace HarmonyMod
                             Deactivate();
                         }
 #endif
+                        // AppDomain.CurrentDomain.AssemblyResolve -= ARResolve;
+                        // AppDomain.CurrentDomain.TypeResolve -= ATResolve;
+
+
                     }
 
                     if (handover.isMainMod && helperMod != null)
@@ -687,7 +689,15 @@ namespace HarmonyMod
                 {
                     Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser() { instancesCreated = 0, checkBeforeUse = true, };
                 }
-                c.action();
+                try
+                {
+                    c.action();
+                }
+                catch (Exception ex)
+                {
+                    report.TryReportPlugin(ex);
+                }
+
             });
 
             return true;
@@ -706,7 +716,7 @@ namespace HarmonyMod
                 return;
             }
             var originalAssemblyName = original.DeclaringType.Assembly.GetName();
-            SameAssemblyName signatureComparer = new SameAssemblyName(false, true, false, false);
+            SameAssemblyName signatureComparer = new SameAssemblyName(SameAssemblyName.VersionComparison.Any, true, false, false);
 
             if (signatureComparer.Equals(originalAssemblyName, myAssembly.GetName()) || originalAssemblyName.Name == "0Harmony")
             {
@@ -741,7 +751,44 @@ namespace HarmonyMod
                     if (Versioning.IsObsolete(Versioning.Obsolescence.PROHIBIT_API_MISUSE_AFTER, reason))
                     {
                         throw ex;
+                    } else
+                    {
+                        Mod.mainModInstance.report.ReportPlugin(ModReport.ProblemType.GenericProblem, callerAssembly, ex);
+                        // modReport.ReportProblem(ModReport.ProblemType.GenericProblem, ex);
+
                     }
+
+                    /* This detects when a mod has instantiatied HarmonyLib.Harmony() without first checking
+                     * with the API if the lib is installed (ie, without calling DoOnHarmonyReady() ).
+                     * 
+                     * this means this mod would only work if the lib is already installed at the time
+                     * the mod is loaded. Otherwise it would fail like this:
+                     * 
+                     * ----
+                     * The following assembly referenced from data-000000001C39C4B0 could not be loaded:
+                     *      Assembly:   CitiesHarmony.Harmony    (assemblyref_index=4)
+                     *      Version:    2.0.4.0
+                     *      Public Key: (none)
+                     * The assembly was not found in the Global Assembly Cache, a path listed in the MONO_PATH environment variable, or in the location of the executing assembly (F:\SteamLibrary\steamapps\common\).
+                     * 
+                     * Could not load file or assembly 'CitiesHarmony.Harmony, Version=2.0.4.0, Culture=neutral, PublicKeyToken=null' or one of its dependencies.
+                     * The class KianCommons.Patches.HarmonyPatch2 could not be loaded, used in DirectConnectRoads, Version=2.4.13.37767, Culture=neutral, PublicKeyToken=null
+                     * The class KianCommons.Patches.HarmonyPatch2 could not be loaded, used in DirectConnectRoads, Version=2.4.13.37767, Culture=neutral, PublicKeyToken=null
+                     * The class KianCommons.Patches.HarmonyPatch2 could not be loaded, used in DirectConnectRoads, Version=2.4.13.37767, Culture=neutral, PublicKeyToken=null
+                     *---
+                     *
+                     * This particular failure mode looks like a mysterious "load order problem". The problem is in the mod which failed
+                     * to use the API, ie by failing to fall DoOnHarmonyReady(). The API will not be able to install the missing harmony lib
+                     * because it's not called.
+                     * 
+                     * In this case, this particular author, kian.zarin, has built this faulty patching logic in his "KianCommons" library, so
+                     * he can reuse it in all his mods, which means all his mods are broken in this way.
+                     * 
+                     * The particular mod in this example, DirectConnectRoads, also relies on TrafficManager, and makes the same
+                     * error with it. TMPE.API is included with the project, but never used. Instead, DirectConnectRoads calls
+                     * the TrafficManager assembly directly. It looks like this individual lacks a basic grasp on the concept
+                     * of "API".
+                     */
 
                     Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser()
                         { instancesCreated = 1, checkBeforeUse = false, legacyCaller = false};
@@ -763,8 +810,6 @@ namespace HarmonyMod
             var patchMethodName =
                 (patchMethod is null) ? "*null*" :
                 (patchMethod is HarmonyMethod) ? MethodInfoFullName((patchMethod as HarmonyMethod).method) :
-                (patchMethod is Harmony2009::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as Harmony2009::HarmonyLib.HarmonyMethod).method) :
-                (patchMethod is Harmony2010::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as Harmony2010::HarmonyLib.HarmonyMethod).method) :
                 (patchMethod is HarmonyCHH2040::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as HarmonyCHH2040::HarmonyLib.HarmonyMethod).method) :
                 patchMethod.GetType().FullName;
 
@@ -1003,6 +1048,5 @@ namespace HarmonyMod
                 
             }
         }
-
     }
 }
