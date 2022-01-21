@@ -36,6 +36,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test.Repo", "Test.Repo", "{
 		Test.Repo\mock-test.sh = Test.Repo\mock-test.sh
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "T", "BadMods\T\T.csproj", "{5AA1D11D-0BDF-444B-9EAC-4BECD180CFCC}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mod Tests", "Mod Tests", "{333615FB-C098-4031-B149-38B398C3C43D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.API-Misuse", "Tests.Mod\API-Misuse\Test.API-Misuse.csproj", "{0C927296-4824-4A93-B6A4-4DE7134F921B}"
