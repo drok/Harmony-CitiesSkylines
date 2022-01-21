@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<ProjectGuid>{0C927296-4824-4A93-B6A4-4DE7134F921B}</ProjectGuid>
+		<TargetFramework>net35</TargetFramework>
+		<Deterministic>false</Deterministic>
+		<AssemblyTitle>Test.APIMisuse</AssemblyTitle>
+		<AssemblyVersion>1.0.*</AssemblyVersion>
+		<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+		<Configurations>API 0.9.0.39;API 1.0.3;API 1.0.4;API 1.0.5;API 1.0.6;API 2.0.0</Configurations>
+	</PropertyGroup>
+	<PropertyGroup>
+		<DelaySign>false</DelaySign>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\..\Test.Harmony\Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'!='Release'">
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(Configuration)'=='API 0.9.0.39'">
+		<PackageReference Include="Harmony-CitiesSkylines" Version="$(Configuration.Substring(3))" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(Configuration)'!='API 0.9.0.39'">
+		<PackageReference Include="CitiesHarmony.API" Version="$(Configuration.Substring(3))" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="ICities">
+			<HintPath>G:\References\ICities.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
+	<Target Name="DeployToModDirectory" AfterTargets="Build">
+		<PropertyGroup>
+			<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(ProjectName)-$(Configuration)\</ModDirectory>
+		</PropertyGroup>
+		<ItemGroup>
+			<ModFiles Include="$(TargetDir)*.*" />
+		</ItemGroup>
+		<!-- <RemoveDir Directories="$(ModDirectory)" /> -->
+		<Delete Files="$(ModDirectory)$(TargetFileName)" TreatErrorsAsWarnings="true" />
+		<Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModDirectory)" />
+	</Target>
+</Project>
