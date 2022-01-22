@@ -64,19 +64,19 @@ compatibility management, exception management, etc</Description>
     </ProjectReference>
     <ProjectReference Include="..\IAmAware\IAwareness0.csproj" />
     <Reference Include="Assembly-CSharp">
-      <HintPath>G:\References\Assembly-CSharp.dll</HintPath>
+      <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ColossalManaged">
-      <HintPath>G:\References\ColossalManaged.dll</HintPath>
+      <HintPath>C:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ICities">
-      <HintPath>G:\References\ICities.dll</HintPath>
+      <HintPath>C:\References\ICities.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>G:\References\UnityEngine.dll</HintPath>
+      <HintPath>C:\References\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -103,7 +103,7 @@ compatibility management, exception management, etc</Description>
 	</PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Beta|AnyCPU'">
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;UNITY_ASSERTIONS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer|AnyCPU'">
@@ -134,22 +134,38 @@ compatibility management, exception management, etc</Description>
 	-->
 	<Target Name="DeployToModDirectory" AfterTargets="Build" Condition="'$(Configuration)'!='Developer'">
 	<PropertyGroup>
+		<SteamPath>~/Library/Application Support/Steam/</SteamPath>
+		<SteamPath Condition="! Exists ('$(SteamPath)')">$(ProgramFiles)\Steam</SteamPath>
+		<SteamPath Condition="! Exists ('$(SteamPath)')">$(Registry:HKEY_CURRENT_USER\Software\Valve\Steam@SteamPath)</SteamPath>
+		<CSPath>$(SteamPath)\steamapps\common\Cities_Skylines</CSPath>
+		<!-- If the mod author's CSL is installed in a place other than the default Steam library, you can add below the path to it -->
+		<CSPath Condition="!  Exists ('$(CSPath)')">F:\SteamLibrary\steamapps\common\Cities_Skylines</CSPath>
+		<!-- End Custom CSL Install path -->
+		<MangedDLLPath>$(CSPath)\Cities_Data\Managed</MangedDLLPath>
+		<MangedDLLPath Condition="!  Exists ('$(MangedDLLPath)')">..\dependencies</MangedDLLPath>
+		<UnityPath>$(MSBuildExtensionsPath64)\..\Unity\</UnityPath>
+		<!-- If the mod author's Unity is installed in other than the default locations, specify it below.
+			It is used to generate .mdb debug symbol files
+		-->
+		<UnityPath Condition="! Exists ('$(UnityPath)')">H:\Programs\Unity\</UnityPath>
+		<!-- End Custom Unity Install path -->
+		<UnityPath Condition="! Exists ('$(UnityPath)')">..\Unity\</UnityPath>
 		<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(SolutionName)-$(Configuration)\</ModDirectory>
 	</PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Developer-Updater'">
       <ModFiles Include="$(TargetDir)$(TargetName).dll" />
-      <ModFiles Include="$(TargetDir)$(TargetName).pdb" />
+      <ModFiles Include="$(TargetDir)$(TargetName).dll.mdb" />
       <ModFiles Include="$(TargetDir)$(TargetName)_helper_dll" />
       <ModFiles Include="$(TargetDir)$(TargetName)_helper_pdb" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'!='Developer' and '$(Configuration)'!='Developer-Updater'">
 	  <ModFiles Include="$(TargetDir)*.dll" />
-      <ModFiles Include="$(TargetDir)*.pdb" />
+      <ModFiles Include="$(TargetDir)*.dll.mdb" />
       <ModFiles Include="$(TargetDir)*.dll.config" />
     </ItemGroup>
-
+		<Exec Condition="'$(Configuration)'!='Release'" Command="$(UnityPath)Editor\Data\MonoBleedingEdge\bin\mono.exe $(UnityPath)Editor\Data\MonoBleedingEdge\lib\mono\4.5\pdb2mdb.exe $(TargetDir)$(TargetName).dll" />
 		<Message Text="Installing to Local Mod directory as $(SolutionName)-$(Configuration)" />
     <!-- <RemoveDir Directories="$(ModDirectory)" /> -->
     <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModDirectory)" />

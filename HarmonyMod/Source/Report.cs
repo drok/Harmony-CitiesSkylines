@@ -731,7 +731,6 @@ namespace HarmonyMod
                                         optionsButton.text = m_optionsButtonOriginalText;
                                         optionsButton.eventClick -= ShowReport;
                                         optionsButton.eventClick += entry.OpenOptions;
-                                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] add OpenOptions to {entry.pluginInfo.name} 688");
                                     }
                                 }
                             }
@@ -821,7 +820,7 @@ namespace HarmonyMod
                         } else
 #endif
                         {
-                            color = Mod.firstRun ? COLOR_SELF_FRESH_GOOD : COLOR_SELF_GOOD;
+                            color = Mod.mainModInstance.IsFreshInstall ? COLOR_SELF_FRESH_GOOD : COLOR_SELF_GOOD;
                             tooltip = "Provides Harmony to mods that need it. Installed and working optimally.";
                         }
                     }

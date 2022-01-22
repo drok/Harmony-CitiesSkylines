@@ -56,7 +56,7 @@ namespace HarmonyMod
         #region IUserMod Name and Description
         public string Name {
             get {
-                bool firstListing = (firstRun && handover != null && handover.isMainMod) ||
+                bool firstListing = (handover != null && handover.isMainMod && handover.IsFreshInstall()) ||
                     (!firstRun && report != null && report.numSelfProblems != 0)
 #if DEVELOPER
                     ||
@@ -106,7 +106,7 @@ namespace HarmonyMod
                 string myLocation = (handover == null) ? string.Empty :
                     ((handover.isLocal ? " (local '" : " (workshop '") + handover.self.name + "', " + mode + ")");
 
-                return (firstRun && handover != null && handover.isMainMod) ?
+                return (handover != null && handover.isMainMod && handover.IsFreshInstall()) ?
 #if DEVELOPER
                     $"Welcome to Harmony. Accurate Error Reporting begins after restart, but it can wait. {myLocation}" :
 
@@ -139,6 +139,9 @@ namespace HarmonyMod
 
         internal bool isHelperFirst => handover.isHelperFirst;
         internal bool isFirst => handover.isFirst;
+        internal bool IsFreshInstall => handover.IsFreshInstall();
+
+        internal PluginInfo selfPlugin => handover.self;
 #if DEVELOPER
         internal bool isLocal => handover.isLocal;
         internal bool isHelperLocal => handover.isHelperLocal;
@@ -489,9 +492,25 @@ namespace HarmonyMod
                 }
 #endif
                 report.OnEnabled();
+
+                Update();
             }
 
             handover.NotifyStandbys(true);
+        }
+
+        void Update()
+        {
+            if (!gameObject)
+            {
+                repo = new Collection();
+                gameObject = new GameObject("HarmonyUpdates");
+                GameObject.DontDestroyOnLoad(gameObject);
+            }
+
+            Item self = Item.ItemFromURI(Versioning.PUBLISH_URL + "/" + Versioning.RELEASE_BRANCH);
+            Loaded selfPlugin = new Loaded(mainMod);
+            self.Install(selfPlugin, true);
         }
 
         void Deactivate()
@@ -548,6 +567,7 @@ namespace HarmonyMod
                                 mainModInstance = null;
                                 mainMod = null;
                             }
+#if TRACE
                             Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Standby role to Mod '{mainModName}'");
 #endif
                         }
@@ -673,10 +693,14 @@ namespace HarmonyMod
 
         bool IAmAware.DoOnHarmonyReady(List<ClientCallback> callbacks)
         {
+#if HEAVY_TRACE
             Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady() mainModInstance={mainModInstance?.Name ?? "none"}");
+#endif
             if (mainModInstance != selfPlugin.userModInstance)
             {
+#if HEAVY_TRACE
                 Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady() mainModInstance={mainModInstance?.Name ?? "none"}");
+#endif
                 return mainModInstance != null && 
                     (mainModInstance as IAmAware).DoOnHarmonyReady(callbacks);
             }
@@ -684,7 +708,9 @@ namespace HarmonyMod
             callbacks.Do((c) =>
             {
                 var caller = c.callStack.GetFrame(0).GetMethod();
+#if HEAVY_TRACE
                 Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady caller = {caller.FullDescription()}");
+#endif
                 if (!Harmony.harmonyUsers.TryGetValue(caller.DeclaringType.Assembly.FullName, out var userStatus))
                 {
                     Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser() { instancesCreated = 0, checkBeforeUse = true, };

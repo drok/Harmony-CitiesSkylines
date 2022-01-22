@@ -31,7 +31,7 @@ namespace HarmonyMod
         public const string MyFileVersion = "1.0";
         public const string PACKAGE_NAME = "Harmony";
 #if DEBUG
-        public const string PUBLISH_URL = "http://pro41.ohmisim.ohmi.org/drok/Harmony-CitiesSkylines";
+        public const string PUBLISH_URL = "https://github.com/drok/reltest";
 #else
         public const string PUBLISH_URL = "https://github.com/drok/Harmony-CitiesSkylines";
 #endif

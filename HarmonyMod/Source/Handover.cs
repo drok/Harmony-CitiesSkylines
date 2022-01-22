@@ -54,15 +54,7 @@ namespace HarmonyMod
                 return false;
             });
 
-            DisableHarmonyFromBoformer();
-        }
-
-        internal void UpdateSelf(Loaded selfMod)
-        {
-            Assert.IsTrue(m_self == m_mainMod,
-                "Only the main mod should update the refs");
-            m_self = selfMod;
-            m_mainMod = selfMod;
+            DisableHarmonyFromColossal();
         }
 
         internal PluginInfo mainMod(bool? mainEnabled = null)
@@ -150,18 +142,12 @@ namespace HarmonyMod
                                     Mod.firstRun = !assembly.GetTypes()
                                     .Where(p => typeof(IAmAware).IsAssignableFrom(p) && p.IsClass && !p.IsAbstract)
                                     .Any((p) => (Activator.CreateInstance(p) as IAmAware).IsFullyAware());
-#if TRACE
-                                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Other instance is firstRun={Mod.firstRun}");
-#endif
                                 }
                                 if (m_mainMod == null || name.Version >= mainModVersion)
                                 {
                                     m_mainMod = info;
                                     mainModVersion = name.Version;
                                     isMainMod = info == m_self;
-#if TRACE
-                                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Handover..get_mainMod() current best {mainModVersion}");
-#endif
                                 }
                             }
                             else
@@ -199,19 +185,6 @@ namespace HarmonyMod
 #endif
                 }
             }
-#if TRACE
-            if (m_mainMod != prevMain)
-            {
-                var helperDescription = (helperMod != null) ? $" Helper={helperMod.userModInstance.GetType().FullName}, {helperMod.userModInstance.GetType().Assembly.GetName().Version}" : string.Empty;
-#if TRACE
-#if DEVELOPER
-                UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Handover..get_mainMod() Result: isFirst={isFirst} isMainMod={isMainMod} isLocal={isLocal} isHelper={isHelper} isHelperFirst={isHelperFirst} isHelperLocal={isHelperLocal} mainModVersion={mainModVersion}{helperDescription}. I am {m_self.name}");
-#else
-                UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Handover..get_mainMod() Result: isFirst={isFirst} isMainMod={isMainMod} isLocal={isLocal} isHelper={isHelper} isHelperFirst={isHelperFirst} mainModVersion={mainModVersion}{helperDescription}. I am {m_self.name}");
-#endif
-#endif
-            }
-#endif
             return m_mainMod;
         }
 
@@ -276,7 +249,8 @@ namespace HarmonyMod
             }
         }
 
-        void DisableHarmonyFromBoformer()
+        const string PatchedMarker = "Harmony1_PatchedMarker";
+        void DisableHarmonyFromColossal()
         {
             /* TODO: Implement re-enabling it if this mod is disabled?
              * It is possible, however, it will work flawlessly after this mod,
@@ -286,14 +260,20 @@ namespace HarmonyMod
              * I think it's more fair that if this mod Captured the Flag by getting
              * installed first, it gets to keep the flag.
              */
-            const string PatchedMarker = "Harmony1_PatchedMarker";
 
             var go = UnityEngine.GameObject.Find(PatchedMarker);
             if (go == null)
             {
-                UnityEngine.Object.DontDestroyOnLoad(new UnityEngine.GameObject(PatchedMarker));
+                var lockObject = new UnityEngine.GameObject(PatchedMarker);
+                lockObject.SetActive(Mod.firstRun);
+                UnityEngine.Object.DontDestroyOnLoad(lockObject);
             }
+        }
 
+        public bool IsFreshInstall()
+        {
+            var go = UnityEngine.GameObject.Find(PatchedMarker);
+            return go != null && go.activeSelf;
         }
     }
 }
