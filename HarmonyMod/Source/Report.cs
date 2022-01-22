@@ -28,6 +28,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Assertions;
+using static UnityEngine.Debug;
+using static UnityEngine.Assertions.Assert;
 using Harmony2::HarmonyLib;
 
 using static ColossalFramework.Plugins.PluginManager;
@@ -87,8 +89,13 @@ namespace HarmonyMod
             "0Harmony, Version=2.0.1.0",
             "0Harmony, Version=2.0.4.0",
             "CitiesHarmony.Harmony, Version=2.0.4.0",
-            "IAmAware, Version=0.0.2.0",
+            "IAmAware, Version=0.0.1.0",
             "CitiesHarmony, Version=0.0.0.0",
+            // "Mono.Cecil, Version=0.10.4.0",
+            // "Mono.Cecil.Mdb, Version=0.10.4.0",
+            // "Mono.Cecil.Pdb, Version=0.10.4.0",
+            // "Mono.Cecil.Rocks, Version=0.10.4.0",
+            // "MonoMod.Common, Version=22.1.16.0",
             /* FIXME: Sign LibGit2Sharp */
             // "LibGit2Sharp, Version=0.17.0.0",
         };
@@ -111,7 +118,7 @@ namespace HarmonyMod
        {
             selfDiag_problems = new bool[(int)SelfProblemType.Last];
 #if HEAVY_TRACE
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Report Created\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Report Created\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
 #endif
 
             m_modReports = new Dictionary<PluginInfo, ModReportBase>();
@@ -188,12 +195,12 @@ namespace HarmonyMod
             switch (reportFormat)
             {
                 case ReportFormat.Gist:
-                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] === {title} === paste as FinalReport.md at https://gist.github.com/\n## {title}\n" +
+                    Log($"[{Versioning.FULL_PACKAGE_NAME}] === {title} === paste as FinalReport.md at https://gist.github.com/\n## {title}\n" +
                         report +
                         "\n\n=========================================================================================================================");
                     break;
                 default:
-                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}]  ================================= {title} ====================================\n" +
+                    Log($"[{Versioning.FULL_PACKAGE_NAME}]  ================================= {title} ====================================\n" +
                         report +
                         "=========================================================================================================================");
                     break;
@@ -232,7 +239,7 @@ namespace HarmonyMod
             missingAssemblies.Clear();
 
 #if HEAVY_TRACE
-            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.PrepareReport()");
+            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.PrepareReport()");
 #endif
             foreach (PluginInfo mod in Singleton<PluginManager>.instance.GetPluginsInfo())
             {
@@ -324,9 +331,9 @@ namespace HarmonyMod
             }
             else
             {
-                if (i > 0 && problematicMods < i)
+                if (i > 1 && problematicMods < (i - 1))
                 {
-                    report += $"         ---  Not shown: {i - problematicMods} other mods with no obvious issues ---\n";
+                    report += $"         ---  Not shown: {i - 1 - problematicMods} other mods with no obvious issues ---\n";
                 }
             }
 
@@ -400,7 +407,7 @@ namespace HarmonyMod
                 Harmony.harmonyUsers.Do((u) => {
                     users += $"{ u.Key} : checksBeforeUse: { u.Value.checkBeforeUse} legacy: {u.Value.legacyCaller}, { u.Value.instancesCreated} instances\n";
                 });
-                UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Harmony Users:\n{users}");
+                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Harmony Users:\n{users}");
             }
 #endif
         }
@@ -496,7 +503,7 @@ namespace HarmonyMod
             void UpdateReport()
         {
 #if HEAVY_TRACE
-            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.UpdateReport()");
+            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.UpdateReport()");
 #endif
 
             if (reportPanel != null && reportPanel.component.isVisible)
@@ -652,7 +659,7 @@ namespace HarmonyMod
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING -  OnEnable() failed: ({Report.ExMessage(ex, true)})");
+                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING -  OnEnable() failed: ({Report.ExMessage(ex, true)})");
             }
 
         }
@@ -708,7 +715,7 @@ namespace HarmonyMod
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING -  Report.OnDisabled failed: ({Report.ExMessage(ex, true)})");
+                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING -  Report.OnDisabled failed: ({Report.ExMessage(ex, true)})");
             }
         }
 
@@ -1006,7 +1013,10 @@ namespace HarmonyMod
             selfDiag_problems[(int)problem] = true;
             if (e != null)
             {
-                GetReport(Mod.mainMod).ReportProblem(ModReport.ProblemType.ExceptionTriggered, e, SelfProblemText(problem));
+                GetReport(Mod.mainMod).ReportProblem(ModReport.ProblemType.ExceptionThrown, e, SelfProblemText(problem));
+#if DEBUG || TRACE
+                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Exception ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
+#endif
             }
 #if DEVELOPER
             else
@@ -1015,11 +1025,11 @@ namespace HarmonyMod
             }
 #endif
 #if DEBUG
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] SELF-ERROR - {Report.SelfProblemText(problem)}\n{ExMessage(e, true)}");
+            LogError($"[{Versioning.FULL_PACKAGE_NAME}] SELF-ERROR - {Report.SelfProblemText(problem)}\n{ExMessage(e, true)}");
             // Not implemented in mono for VS or dnspy
             // System.Diagnostics.Debugger.Launch();
             // System.Diagnostics.Debugger.Break();
-            UnityEngine.Debug.DebugBreak();
+            DebugBreak();
 #endif
 
         }
@@ -1028,6 +1038,53 @@ namespace HarmonyMod
         {
             unsupportedLibs = e;
             modReports.Do((r) => (r.Value as ModReport).ReportUnsupportedHarmony(unsupportedLibs));
+        }
+
+        /* Returns the number of problems reported so far to the plugin
+         * If a responsible plugin is not found, return 0
+         */
+        internal uint PluginFailureCount(Exception exception)
+        {
+            int level = 0;
+            for (var e = exception; e != null; e = e.InnerException)
+            {
+                var stackTrace = new System.Diagnostics.StackTrace(e, true);
+                /* This prints a duplicate exception in the log */
+
+                if (e is HarmonyModSupportException)
+                {
+                    break;
+                }
+                ++level;
+
+                PluginInfo mod = e.TargetSite != null ? Singleton<PluginManager>.instance.FindPluginInfo(e.TargetSite.GetType().Assembly) : null;
+                if (mod != null)
+                {
+                    var modReport = GetReport(mod);
+                    IsNotNull(modReport, $"A ModReport should already exist for {mod.modPath}");
+                    return modReport.numProblems;
+                }
+                else
+                {
+                    bool done = false;
+                    for (int i = 0; i < stackTrace.FrameCount && !done; ++i)
+                    {
+                        var frame = stackTrace.GetFrame(i);
+                        var method = frame.GetMethod();
+                        var a = method.ReflectedType.Assembly;
+                        mod = Singleton<PluginManager>.instance.FindPluginInfo(a);
+                        if (mod != null)
+                        {
+                            var modReport = GetReport(mod);
+                            IsNotNull(modReport, $"A ModReport should already exist for {mod.modPath}");
+                            return modReport.numProblems;
+                        }
+                    }
+                }
+                if (e is HarmonyModSupportException || e is HarmonyModACLException || Patcher.isHarmonyUserException(e)) break;
+            }
+
+            return 0;
         }
 
         /* Returns the number of problems reported so far to the plugin
@@ -1057,11 +1114,11 @@ namespace HarmonyMod
 #if TRACE
                 else if (Patcher.isHarmonyUserException(e))
                 {
-                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception from patchset '{(e as HarmonyUserException)?.harmonyInstance?.Id}' ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
+                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception from patchset '{(e as HarmonyUserException)?.harmonyInstance?.Id}' ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
                 }
                 else
                 {
-                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
+                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
                 }
 #endif
                 ++level;
@@ -1141,7 +1198,7 @@ namespace HarmonyMod
                 failStr = $"{firstFailureProblemCount} failures shown so far by {failingMod.name}";
             }
 
-            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING Exception will " +
+            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING Exception will " +
             $"{(firstFailureProblemCount <= MAX_EXCEPTION_PROMPTS_PER_MOD ? string.Empty : "not ")}be reported with a pop-up " +
                 $"({failStr}{triggerStr})");
 #endif
@@ -1176,7 +1233,17 @@ namespace HarmonyMod
             activities.Add(activity);
         }
 
-        internal uint numSelfProblems { get { return GetReport(Mod.mainMod).numProblems; } }
+        internal uint numSelfProblems
+        {
+            get
+            {
+                if (m_modReports.TryGetValue(Mod.mainMod, out ModReportBase r))
+                {
+                    return r.numProblems;
+                }
+                return 0;
+            }
+        }
 
         internal Dictionary<PluginInfo, ModReportBase> modReports { get { return m_modReports; } }
         internal void PutModReports(Dictionary<PluginInfo, ModReportBase> reports)
@@ -1211,7 +1278,7 @@ namespace HarmonyMod
                         {
                             Mod.SelfReport(SelfProblemType.ManifestMismatch, new Exception($"Wrong Assembly Loaded: {name.FullName}"));
                             GetReport(Mod.mainMod).ReportProblem(ModReport.ProblemType.ModConflict, assembly);
-                            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME} ERROR Conflicting Assembly: {name.FullName}");
+                            LogError($"[{Versioning.FULL_PACKAGE_NAME} ERROR Conflicting Assembly: {name.FullName}");
                         } else
                         {
                             missingAssemblies.Remove(nameVer);
@@ -1243,12 +1310,12 @@ namespace HarmonyMod
                         if (e != inner)
                         {
                             var failureLocation = (e.TargetSite != null) ? ":\n{ e.StackTrace}" : $" reported:\n{new System.Diagnostics.StackTrace(1 + skipFrames, true)}";
-                            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - " +
+                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - " +
                                 $"A {inner.GetType().Name} ({inner.Message}) Bug:\n{inner.StackTrace}\n\n" +
                                 $"... Caused a {e.GetType().Name} ({e.Message}){failureLocation}");
                         } else
                         {
-                            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - " +
+                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - " +
                                 $"a {inner.GetType().Name} ({inner.Message}) Bug exists:\n{inner.StackTrace}");
                         }
                     }

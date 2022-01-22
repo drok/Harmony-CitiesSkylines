@@ -43,7 +43,8 @@ namespace HarmonyMod.MyPatches
              *
              * All exceptions are logged and reported in the Harmony report.
              */
-            return (Mod.mainMod.userModInstance as Mod).report.TryReportPlugin(e) <= Report.MAX_EXCEPTION_PROMPTS_PER_MOD;
+            var shouldPopExceptionPanel = (Mod.mainMod.userModInstance as Mod).report.PluginFailureCount(e) <= Report.MAX_EXCEPTION_PROMPTS_PER_MOD;
+            return shouldPopExceptionPanel;
         }
     
         [UsedImplicitly]
