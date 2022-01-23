@@ -16,8 +16,6 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 extern alias Harmony2;
-extern alias Harmony2009;
-extern alias Harmony2010;
 extern alias HarmonyCHH2040;
 
 using static UnityEngine.Debug;
@@ -92,8 +90,6 @@ namespace HarmonyMod
                 Harmony2009::HarmonyLib.Harmony.awarenessInstance = self;
                 HarmonyCHH2040::HarmonyLib.Harmony.awarenessInstance = self;
             }
-            Harmony2009::HarmonyLib.Harmony.isEnabled = true;
-            Harmony2010::HarmonyLib.Harmony.isEnabled = true;
             HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = true;
             if (!Harmony.harmonyUsers.ContainsKey(Assembly.GetExecutingAssembly().FullName)) {
                 Harmony.harmonyUsers[Assembly.GetExecutingAssembly().FullName] = new Harmony.HarmonyUser() { checkBeforeUse = true, legacyCaller = false, instancesCreated = 0, };
@@ -105,8 +101,6 @@ namespace HarmonyMod
         void DisableHarmony()
         {
             Harmony.isEnabled = false;
-            Harmony2009::HarmonyLib.Harmony.isEnabled = false;
-            Harmony2010::HarmonyLib.Harmony.isEnabled = false;
             HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = false;
         }
 
@@ -295,8 +289,6 @@ namespace HarmonyMod
         internal static bool isHarmonyUserException(Exception e)
         {
             return e is HarmonyUserException ||
-                e is Harmony2009::HarmonyLib.HarmonyUserException ||
-                e is Harmony2010::HarmonyLib.HarmonyUserException ||
                 e is HarmonyCHH2040::HarmonyLib.HarmonyUserException;
         }
         internal static Harmony2::HarmonyLib.Harmony CreateClientHarmony(string harmonyId)
