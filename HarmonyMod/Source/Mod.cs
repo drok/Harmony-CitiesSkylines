@@ -166,6 +166,7 @@ namespace HarmonyMod
         static Mod()
         {
             raiseExceptions = true;
+            Resolver.Install();
             try
             {
                 //#if DEBUG
@@ -483,6 +484,12 @@ namespace HarmonyMod
                     patcher.Install();
                 }
 
+                if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path == "Assets/Data/Scenes/System/Startup.unity")
+                    Cleanup.StartMenu();
+                else
+                    Cleanup.RemoveMalware();
+
+
 #if DEVELOPER
                 if (helperMod != null && !handover.isHelperFirst)
                 {
@@ -566,7 +573,7 @@ namespace HarmonyMod
                                 // I am mainmod and being deactivated
                                 mainModInstance = null;
                                 mainMod = null;
-                            }
+                        }
 #if TRACE
                             Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Standby role to Mod '{mainModName}'");
 #endif

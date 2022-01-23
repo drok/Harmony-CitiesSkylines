@@ -32,6 +32,7 @@ using UnityEngine.SceneManagement;
 using static UnityEngine.Debug;
 using static UnityEngine.Assertions.Assert;
 using Harmony2::HarmonyLib;
+using static UnityEngine.Debug;
 
 using static ColossalFramework.Plugins.PluginManager;
 
@@ -1263,14 +1264,15 @@ namespace HarmonyMod
             }))
             {
                 guiltyAssembly = from;
-            } else
+            }
+            else
             {
                 guiltyAssembly = default(AssemblyName);
             }
 
             return origin;
         }
-#if TRACE
+
         internal static PluginInfo FindCallOrigin(System.Diagnostics.StackTrace stackTrace)
         {
             PluginInfo origin = null;
@@ -1298,7 +1300,18 @@ namespace HarmonyMod
         {
             GetReport(plugin).ReportProblem(problem, ex, detail);
         }
+        internal void ReportPlugin(ModReport.ProblemType problem, AssemblyName modAssembly, Exception ex)
+        {
+            var plugin = Mod.mainModInstance.report.m_Plugins.Values.FirstOrDefault((p) => p.ContainsAssembly(modAssembly));
 
+            if (plugin != null)
+                GetReport(plugin).ReportProblem(problem, ex);
+            else
+            {
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - no responsible mod found; detail: {Report.ExMessage(ex.InnerException, true, 1)}");
+                TryReportPlugin(ex);
+            }
+        }
         internal void ReportPlugin(ModReport.ProblemType problem, Exception ex, int skipframes, out AssemblyName guiltyMod, string detail = null)
         {
             var plugin = FindCallerMod(new System.Diagnostics.StackTrace(skipframes + 1, true), out guiltyMod);
@@ -1322,20 +1335,6 @@ namespace HarmonyMod
                 TryReportPlugin(ex);
             }
         }
-        internal void ReportPlugin(ModReport.ProblemType problem, AssemblyName modAssembly, Exception ex)
-        {
-            var plugin = Mod.mainModInstance.report.m_Plugins.Values.FirstOrDefault((p) => p.ContainsAssembly(modAssembly));
-
-            if (plugin != null)
-                GetReport(plugin).ReportProblem(problem, ex);
-            else
-            {
-                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - no responsible mod found; detail: {Report.ExMessage(ex.InnerException, true, 1)}");
-                TryReportPlugin(ex);
-            }
-        }
-
-
         internal void ReportActivity (string activity)
         {
             activities.Add(activity);

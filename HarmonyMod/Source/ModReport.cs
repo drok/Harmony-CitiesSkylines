@@ -57,6 +57,7 @@ namespace HarmonyMod
             ModConflict,
             ExceptionThrown,
             ExceptionTriggered,
+            AssemblyHackery,
             GenericProblem,
             Last
         }
@@ -67,7 +68,7 @@ namespace HarmonyMod
         Dictionary<string, uint> m_exceptionsThrown = new Dictionary<string, uint>();
         Dictionary<string, uint> m_exceptionsTriggered = new Dictionary<string, uint>();
         List<AssemblyName> m_modConflicts = new List<AssemblyName>();
-        Dictionary<string, uint> m_genericProblems = new Dictionary<string, uint>();
+        Dictionary<ProblemType, Dictionary<string, uint>> m_genericProblems = new Dictionary<ProblemType, Dictionary<string, uint>>();
         public bool isEnumerated { get; set; }
 
         internal ModReport(PluginInfo p, HashSet<AssemblyName> haveAssemblies, HarmonyModSupportException unsupportedLibs = null, bool enumerated = true)
@@ -340,23 +341,27 @@ namespace HarmonyMod
                         found++;
                     }
                     break;
+                case ProblemType.AssemblyHackery:
                 case ProblemType.GenericProblem:
-                    foreach (var e in m_genericProblems)
+                    if (m_genericProblems.TryGetValue((ProblemType)i, out var problems))
                     {
-                        if (found == maxLines)
+                        foreach (var e in problems)
                         {
-                            summary += prefix + "  ..." + postfix;
-                            continue;
-                        }
+                            if (found == maxLines)
+                            {
+                                summary += prefix + "  ..." + postfix;
+                                continue;
+                            }
 
 
-                        summary += prefix + "  " + e.Key;
-                        if (e.Value > 1)
-                        {
-                            summary += $": {e.Value} times";
+                            summary += prefix + "  " + e.Key;
+                            if (e.Value > 1)
+                            {
+                                summary += $": {e.Value} times";
+                            }
+                            summary += postfix;
+                            found++;
                         }
-                        summary += postfix;
-                        found++;
                     }
                     break;
                 case ProblemType.ModConflict:
@@ -395,6 +400,7 @@ namespace HarmonyMod
                 case ProblemType.ExceptionThrown: return $"Exceptions thrown: {n}";
                 case ProblemType.ExceptionTriggered: return $"Exceptions triggered: {n} incidents from {m_exceptionsTriggered.Count} locations";
                 case ProblemType.GenericProblem: return $"Other problems: {n}";
+                case ProblemType.AssemblyHackery: return $"Exploits: {n}";
                 case ProblemType.ModConflict: return $"Mod Conflicts: {n}";
 #if DEVELOPER
                 case ProblemType.HelperNotLoadedFirst: return "Helper is not loaded first";
@@ -421,6 +427,18 @@ namespace HarmonyMod
                 }
             }
             return str;
+        }
+
+        internal uint ReportProblem(ProblemType problem, Exception e, AssemblyName assemblyName)
+        {
+
+            switch (problem)
+            {
+                case ProblemType.AssemblyHackery:
+                    m_missingAssemblies.Remove(assemblyName);
+                    break;
+            }
+            return ReportProblem(problem, e);
         }
 
         internal uint ReportProblem(ProblemType problem, Exception e, string detail = null)
@@ -473,13 +491,19 @@ namespace HarmonyMod
             m_problemCount[(int)problem]++;
             switch (problem)
             {
+                case ProblemType.AssemblyHackery:
                 case ProblemType.GenericProblem:
-                    if (m_genericProblems.ContainsKey(detail))
+                    if (!m_genericProblems.TryGetValue(problem, out var problems))
                     {
-                        m_genericProblems[detail]++;
+                        problems = new Dictionary<string, uint>();
+                        m_genericProblems[problem] = problems;
+                    }
+                    if (problems.ContainsKey(detail))
+                    {
+                        problems[detail]++;
                     } else
                     {
-                        m_genericProblems[detail] = 1;
+                        problems[detail] = 1;
                     }
                     break;
             }
