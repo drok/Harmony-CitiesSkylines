@@ -20,6 +20,9 @@ extern alias Harmony2009;
 extern alias Harmony2010;
 extern alias HarmonyCHH2040;
 
+using static UnityEngine.Debug;
+using static UnityEngine.Assertions.Assert;
+
 
 namespace HarmonyMod
 {
@@ -29,7 +32,6 @@ namespace HarmonyMod
     using System.Collections.Generic;
     using System.Reflection;
     using System.Diagnostics;
-    using UnityEngine.Assertions;
 
     internal class Patcher
     {
@@ -44,7 +46,6 @@ namespace HarmonyMod
          * and other mods still need their 2.x access though 1.2.0.1 api
          */
         readonly string compat_id;
-        readonly Harmony compatHarmony;
         readonly bool foundUnsupportedHarmonyLib = false;
 
         IAmAware self;
@@ -63,8 +64,6 @@ namespace HarmonyMod
 
             EnableHarmony();
             harmony = new Harmony(id);
-            compatHarmony = new Harmony(compat_id);
-
 
             if (!Harmony.Harmony1Patched)
             {
@@ -113,10 +112,10 @@ namespace HarmonyMod
 
         internal bool Install()
         {
-            Assert.IsFalse(initialized_,
+            IsFalse(initialized_,
                 "Should not call Patcher.Install() more than once");
 #if TRACE
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Installing patches as {id}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Installing patches as {id}");
 #endif
 
             try
@@ -155,20 +154,23 @@ namespace HarmonyMod
 
         internal void Uninstall()
         {
-            Assert.IsTrue(initialized_,
+            IsTrue(initialized_,
                 "Should not call Patcher.Uninstall() more than once");
 
 #if TRACE
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Removing patches as {id}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Removing patches as {id}");
 #endif
 
-            Assert.IsNotNull(harmony, "HarmonyInst != null");
+            IsNotNull(harmony, "HarmonyInst != null");
             try
             {
                 if (foundUnsupportedHarmonyLib)
                     EnableHarmony();
 
                 harmony.UnpatchAll(id);
+#if TRACE
+                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Patches for {id} were removed");
+#endif
 
                 /* FIXME: When harmonymod is removed last, it's
                  * safe to also remove Harmon1 patches.
@@ -177,6 +179,9 @@ namespace HarmonyMod
                  */
                 if (foundUnsupportedHarmonyLib)
                     DisableHarmony();
+#if TRACE
+                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Harmony Disabled");
+#endif
             }
             catch (Exception e)
             {
@@ -188,7 +193,7 @@ namespace HarmonyMod
 
         internal void UninstallAll()
         {
-            Assert.IsTrue(Harmony.isEnabled,
+            IsTrue(Harmony.isEnabled,
                 "Harmony should be enabled before UninstallAll");
 
             /* FIXME - implement disabling Harmony should remove all dependent mods' patches */
@@ -289,12 +294,12 @@ namespace HarmonyMod
         }
         internal static bool isHarmonyUserException(Exception e)
         {
-            return e is Harmony2.HarmonyLib.HarmonyUserException ||
+            return e is HarmonyUserException ||
                 e is Harmony2009::HarmonyLib.HarmonyUserException ||
                 e is Harmony2010::HarmonyLib.HarmonyUserException ||
                 e is HarmonyCHH2040::HarmonyLib.HarmonyUserException;
         }
-        internal static Harmony CreateClientHarmony(string harmonyId)
+        internal static Harmony2::HarmonyLib.Harmony CreateClientHarmony(string harmonyId)
         {
             var stack = new StackTrace();
             var lastCaller = stack.GetFrame(0).GetMethod();

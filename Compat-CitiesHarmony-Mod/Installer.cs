@@ -1,6 +1,8 @@
-﻿namespace CitiesHarmony.API
+﻿extern alias Harmony2;
+
+namespace CitiesHarmony
 {
-    using HarmonyLib;
+    using Harmony2::HarmonyLib;
     using System.Diagnostics;
     using System.Reflection;
 

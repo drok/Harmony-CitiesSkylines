@@ -41,9 +41,9 @@ namespace HarmonyMod.MyPatches
 			var m_UserModInstance = userModInstance.Value;
 			List<Assembly> m_Assemblies = inst.Field<List<Assembly>>("m_Assemblies").Value;
 
-#if HEAVY_TRACE
-			UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] PluginInfo.get_userModInstance() for {__instance.name} called from \n{new System.Diagnostics.StackTrace(true)}"); // : {__exception.Message}\n{__exception.StackTrace}");
-#endif
+// #if HEAVY_TRACE
+// 			UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] PluginInfo.get_userModInstance() for {__instance.name} called from \n{new System.Diagnostics.StackTrace(true)}"); // : {__exception.Message}\n{__exception.StackTrace}");
+// #endif
 
 			__result = null;
 			if (m_UserModInstance == null)

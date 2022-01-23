@@ -87,15 +87,19 @@ namespace HarmonyMod
             "0Harmony, Version=2.0.1.0",
             "0Harmony, Version=2.0.4.0",
             "CitiesHarmony.Harmony, Version=2.0.4.0",
-            "IAmAware, Version=0.0.1.0",
+            "IAmAware, Version=0.0.2.0",
             "CitiesHarmony, Version=0.0.0.0",
+            /* FIXME: Sign LibGit2Sharp */
+            // "LibGit2Sharp, Version=0.17.0.0",
         };
 
         string m_optionsButtonOriginalText = null;
         float reportPanel_orig_height = 0;
         float reportPanel_orig_width = 0;
 
+#if IMPLEMENTED_CUSTOM_ICON_ON_REPORT_PANEL
         readonly Texture2D Logo;
+#endif
         ExceptionPanel reportPanel = null;
         UILabel reportText = null;
         UISprite summarySprite = null;
@@ -107,7 +111,7 @@ namespace HarmonyMod
        {
             selfDiag_problems = new bool[(int)SelfProblemType.Last];
 #if HEAVY_TRACE
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Report Created\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
+            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Report Created\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
 #endif
 
             m_modReports = new Dictionary<PluginInfo, ModReportBase>();
@@ -128,7 +132,9 @@ namespace HarmonyMod
                 haveAssemblies.Add(name);
             }
 
+#if IMPLEMENTED_CUSTOM_ICON_ON_REPORT_PANEL
             Logo = LoadDllResource("HarmonyLogo.png", 800, 800);
+#endif
         }
 
         private void Decorate(bool forDisplay, ReportFormat reportFormat)
@@ -182,12 +188,12 @@ namespace HarmonyMod
             switch (reportFormat)
             {
                 case ReportFormat.Gist:
-                    UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] === {title} === paste as FinalReport.md at https://gist.github.com/\n## {title}\n" +
+                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] === {title} === paste as FinalReport.md at https://gist.github.com/\n## {title}\n" +
                         report +
                         "\n\n=========================================================================================================================");
                     break;
                 default:
-                    UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}]  ================================= {title} ====================================\n" +
+                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}]  ================================= {title} ====================================\n" +
                         report +
                         "=========================================================================================================================");
                     break;
@@ -225,6 +231,9 @@ namespace HarmonyMod
             int problematicMods = 0;
             missingAssemblies.Clear();
 
+#if HEAVY_TRACE
+            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.PrepareReport()");
+#endif
             foreach (PluginInfo mod in Singleton<PluginManager>.instance.GetPluginsInfo())
             {
                 if (mod.isBuiltin)
@@ -232,6 +241,8 @@ namespace HarmonyMod
                     continue;
                 }
                 var modReport = GetReport(mod);
+#if false
+                var harmonyUsers = Harmony.harmonyUsers;
                 mod.GetAssemblies()
                     .Exists((a) =>
                     {
@@ -397,7 +408,6 @@ namespace HarmonyMod
         internal void OnModListChanged(bool inGame)
         {
             // HashSet<PluginInfo> addedMods = new HashSet<PluginInfo>();
-            ModReportBase modReport;
 
             Singleton<PluginManager>.instance.GetPluginsInfo()
                 .Where((p) => !p.isBuiltin)
@@ -425,7 +435,9 @@ namespace HarmonyMod
                         if (p.isEnabled)
                             key = p.GetAssemblies()[0].FullName; //userModInstance.GetType().Assembly.FullName;
                     }
+#pragma warning disable CS0168 // The variable 'ex' is declared but never used
                     catch (Exception ex)
+#pragma warning restore CS0168 // The variable 'ex' is declared but never used
                     {
                     }
 
@@ -938,8 +950,8 @@ namespace HarmonyMod
                 selfDiag_problems[(int)SelfProblemType.FailedToReceiveReports] ||
                 selfDiag_problems[(int)SelfProblemType.FailedToYieldToMain])
             {
-                report += "UNFORSEEN FAULT\n" +
-                    "              Some fault happened that could have been forseen and handled, but wasn't.\n" +
+                report += "UNFORESEEN FAULT\n" +
+                    "              Some fault happened that could have been foreseen and handled, but wasn't.\n" +
                     "              This is a bug in the Harmony Mod.\n" +
                     "              Please make a bug report to the Harmony Mod author and include this full log file\n" +
                     "\n";
@@ -997,6 +1009,14 @@ namespace HarmonyMod
                 GetReport(Mod.mainMod).ReportProblem(ModReport.ProblemType.HelperNotLoadedFirst);
             }
 #endif
+#if DEBUG
+            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] SELF-ERROR - {Report.SelfProblemText(problem)}\n{ExMessage(e, true)}");
+            // Not implemented in mono for VS or dnspy
+            // System.Diagnostics.Debugger.Launch();
+            // System.Diagnostics.Debugger.Break();
+            UnityEngine.Debug.DebugBreak();
+#endif
+
         }
 
         internal void ReportUnsupportedHarmony(HarmonyModSupportException e)
@@ -1029,7 +1049,7 @@ namespace HarmonyMod
                     ReportUnsupportedHarmony(e as HarmonyModSupportException);
                     break;
                 }
-// #if TRACE
+#if TRACE
                 else if (Patcher.isHarmonyUserException(e))
                 {
                     UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception from patchset '{(e as HarmonyUserException)?.harmonyInstance?.Id}' ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
@@ -1038,7 +1058,7 @@ namespace HarmonyMod
                 {
                     UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
                 }
-// #endif
+#endif
                 ++level;
                 if (firstFailureProblemCount != 0) continue;
 

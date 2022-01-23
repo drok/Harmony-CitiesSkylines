@@ -28,11 +28,14 @@ using System.Linq;
 using System.Threading;
 using System.Reflection;
 using ColossalFramework;
+using ColossalFramework.UI;
 using ColossalFramework.Plugins;
 using ColossalFramework.PlatformServices;
 using static ColossalFramework.Plugins.PluginManager;
 using System.Collections.Generic;
-using UnityEngine.Assertions;
+using UnityEngine;
+using static UnityEngine.Debug;
+using static UnityEngine.Assertions.Assert;
 using Harmony2::HarmonyLib;
 
 namespace HarmonyMod
@@ -44,10 +47,13 @@ namespace HarmonyMod
 
 #if DEVELOPER
         internal const string RECOMMENDED_LOCAL_HELPER_DIRNAME = "000-" + Versioning.PACKAGE_NAME + "-HELPER";
+#elif MODMANAGER
+        internal const string RECOMMENDED_LOCAL_HELPER_DIRNAME = "000-" + Versioning.PACKAGE_NAME + "-ModManager";
 #endif
 #if TRACE
         internal static int instancenum = 0;
 #endif
+        internal const string SettingsFile = Versioning.PACKAGE_NAME;
 
         #region IUserMod Name and Description
         public string Name {
@@ -143,6 +149,10 @@ namespace HarmonyMod
 
         internal Report report;
 
+        readonly static internal GameObject gameObject;
+
+        internal Collection repo;
+
         static bool needAutoEnableCall = false;
 #if DEVELOPER_UPDATER
         static bool needInstallCall = true;
@@ -154,6 +164,7 @@ namespace HarmonyMod
 
         static Mod()
         {
+            raiseExceptions = true;
             try
             {
                 //#if DEBUG
@@ -203,13 +214,17 @@ namespace HarmonyMod
                     needInstallCall = false;
 #endif
                 }
+
+                gameObject = new GameObject("HarmonyUpdates");
+                GameObject.DontDestroyOnLoad(gameObject);
+
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor: ({Report.ExMessage(ex, true)})");
+                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - Mod..cctor: ({Report.ExMessage(ex, true)})");
             }
 #if HEAVY_TRACE
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Mod..cctor DONE");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Mod..cctor Debugger: {System.Diagnostics.Debugger.IsAttached} DONE");
 #endif
         }
         // Install Harmony as soon as possible to avoid problems with mods not following the guidelines
@@ -218,7 +233,7 @@ namespace HarmonyMod
         public Mod()
         {
             ++instancenum;
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod..ctor() thread={Thread.CurrentThread.ManagedThreadId} plugin={mainMod != null}\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Mod..ctor() thread={Thread.CurrentThread.ManagedThreadId} plugin={mainMod != null}\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
         }
 #endif
 
@@ -236,7 +251,7 @@ namespace HarmonyMod
                 }
 
 #if TRACE
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnEnabled() I am={handover.self.name} #{instancenum}");
+                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnEnabled() I am={handover.self.name} #{instancenum}");
 #endif
 
                 if (handover.BootStrapMainMod())
@@ -247,13 +262,13 @@ namespace HarmonyMod
                     }
                     var mainModName = $"{(handover.mainMod().userModInstance as IUserMod).Name} {handover.mainModVersion}";
 #if TRACE
-                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Helper, main Mod '{mainModName}' was bootstrapped.");
+                    Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Helper, main Mod '{mainModName}' was bootstrapped.");
 #endif
                 }
                 else
                 {
 #if TRACE
-                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I am the active Harmony.");
+                    Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I am the active Harmony.");
 #endif
 
                     OnActive();
@@ -261,7 +276,7 @@ namespace HarmonyMod
 #if DEVELOPER
                     if (!handover.isFirst && !handover.isHelperFirst)
                     {
-                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] INFO - reporting - SelfProblemType.NotLoadedFirst on SELF");
+                        LogError($"[{Versioning.FULL_PACKAGE_NAME}] INFO - reporting - SelfProblemType.NotLoadedFirst on SELF");
                         SelfReport(SelfProblemType.NotLoadedFirst);
                     }
 
@@ -295,7 +310,7 @@ namespace HarmonyMod
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR FAIL TO INIT:\n{Report.ExMessage(ex, true)} ... \n {ex.StackTrace}\n\ncall from {new System.Diagnostics.StackTrace(true)}");
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR FAIL TO INIT:\n{ex.GetType()} ... {Report.ExMessage(ex, true)} ... \n {ex.StackTrace}\n\ncall from {new System.Diagnostics.StackTrace(true)}");
                 SelfReport(SelfProblemType.FailedToInitialize, ex);
             }
         }
@@ -315,14 +330,11 @@ namespace HarmonyMod
                 if (handover != null)
                 {
 #if TRACE
-                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() I am={handover.self.name} #{instancenum} " +
+                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() I am={handover.self.name} #{instancenum} " +
                         $"{(pluginManagerShuttingDown ? "Exiting Application" : "Disabled by user action")}");
 #endif
                     if (enabled)
                     {
-#if HEAVY_TRACE
-                        resolver?.Uninstall();
-#endif
                         if (!pluginManagerShuttingDown) /* If shutdown is user requested, do it. */
                             patcher?.Uninstall();
                         /* The last Harmony Mod turn off the HarmonyLib */
@@ -352,7 +364,7 @@ namespace HarmonyMod
 #if HEAVY_TRACE
                 else
                 {
-                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() #{instancenum}");
+                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() #{instancenum}");
                 }
 #endif
 
@@ -388,7 +400,7 @@ namespace HarmonyMod
         {
 #if TRACE
             /* can't report here, already disabled */
-            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Mod.OnReleased()");
+            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: LoadingExtension.OnReleased()");
 #endif
 #if BETA || DEVELOPER
             report?.OutputReport(this, false, "Mods Unloaded");
@@ -433,11 +445,12 @@ namespace HarmonyMod
         }
         internal void OnPluginManagerDestroyDone()
         {
-            patcher?.Uninstall();
-            patcher = null;
 
             report?.OnDisabled(mainMod, false);
             report = null;
+
+            patcher?.Uninstall();
+            patcher = null;
         }
 
         void OnActive()
@@ -468,7 +481,7 @@ namespace HarmonyMod
 #if DEVELOPER
                 if (helperMod != null && !handover.isHelperFirst)
                 {
-                    UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] INFO - reporting - ModReport.ProblemType.HelperNotLoadedFirst on helper");
+                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] INFO - reporting - ModReport.ProblemType.HelperNotLoadedFirst on helper");
                     if (!firstRun) 
                         report.ReportPlugin(helperMod, ModReport.ProblemType.HelperNotLoadedFirst);
                 }
@@ -481,6 +494,10 @@ namespace HarmonyMod
 
         void Deactivate()
         {
+            if (mainModInstance == this)
+                if (Mod.gameObject != null)
+                    UnityEngine.Object.Destroy(Mod.gameObject);
+
 #if DEVELOPER
             /* FIXME: Implement API to provide status to other mods */
             patcher?.UninstallAll();
@@ -489,13 +506,13 @@ namespace HarmonyMod
                 Harmony.isEnabled = false;
             }
 #endif
+
         }
 
 #region Awareness Handlers
         /* FIXME: If the app is shutting down, I have to be last to disable,
          * to catch exceptions from other mods disabling, and to turn off HarmonyLib(s) last.
          */
-        // void IAwareness.IAmAware.OnMainModChanged(IAwareness0::IAwareness.IAmAware main, bool enabled)
         void IAmAware.OnMainModChanged(IAmAware main, bool enabled)
         {
             try
@@ -505,7 +522,7 @@ namespace HarmonyMod
                 {
 
 #if TRACE
-                    UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.OnMainModChanged() enabled={enabled} I am={handover.self.name}");
+                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.OnMainModChanged() enabled={enabled} I am={handover.self.name}");
 #endif
 
                     /* TODO: Implement */
@@ -518,18 +535,17 @@ namespace HarmonyMod
                             mainMod = handover.mainMod();
                             mainModInstance = mainMod.userModInstance as Mod;
 
-                            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Helper role to Mod '{mainModName}'");
+#if TRACE
+                            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Helper role to Mod '{mainModName}'");
+#endif
                         } else
                         {
                             UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Standby role to Mod '{mainModName}'");
-                        }
+                            }
 
 
                         if (enabled)
                         {
-#if HEAVY_TRACE
-                            resolver.Uninstall();
-#endif
                             patcher.Uninstall();
                             main.PutModReports(report.modReports);
                             report.OnDisabled(handover.self, true);
@@ -539,22 +555,22 @@ namespace HarmonyMod
                     {
 #if DEBUG
                         var oldMain = Singleton<PluginManager>.instance.GetPluginsInfo().First((x) => x.isEnabledNoOverride && x.userModInstance == main);
-                        UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Main role from {oldMain.name}");
+                        Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Main role from {oldMain.name}");
 #endif
                         OnActive();
                     }
 
                     Assert.IsTrue(mainMod.userModInstance is IAmAware,
                         "Only IAmAware instances can be main mods");
-                    Assert.IsFalse(enabled && handover.isMainMod,
+                    IsFalse(enabled && handover.isMainMod,
                         "Notified instance should concur that it is no longer the main Mod");
-                    Assert.IsTrue(main == handover.mainMod(),
+                    IsTrue(main == handover.mainMod(),
                         "Notification of another Harmony mod being main should be accurate");
                 }
 #if HEAVY_TRACE
                 else
                 {
-                    UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.OnMainModChanged() enabled={enabled}");
+                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.OnMainModChanged() enabled={enabled}");
                 }
 #endif
             }
@@ -569,7 +585,7 @@ namespace HarmonyMod
         void IAmAware.PutModReports(Dictionary<PluginInfo, ModReportBase> reports)
         {
 #if TRACE
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.PutModReports() enabled={enabled} I am={handover.self.name}");
+            LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.PutModReports() enabled={enabled} I am={handover.self.name}");
 #endif
             try
             {
@@ -588,19 +604,19 @@ namespace HarmonyMod
         void IAmAware.SelfReport(SelfProblemType problem, Exception e)
         {
 
-            string debind = $"{(mainMod!=null?"m":"-")}{((mainMod?.userModInstance as Mod) != null ? "M" : "-")}" +
+            string debind = $"{(mainMod!=null?"m":"-")}{(mainModInstance != null ? "M" : "-")}" +
                 $"{(report != null ? "R":"-")}";
             if (e != null)
             {
-                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR (s{debind}) - {Report.SelfProblemText(problem)}: {Report.ExMessage(e, true, 1)}");
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR (s{debind}) - {Report.SelfProblemText(problem)}: {Report.ExMessage(e, true, 1)}");
             }
             else
             {
-                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR (se{debind}) - {Report.SelfProblemText(problem)}");
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR (se{debind}) - {Report.SelfProblemText(problem)}");
             }
             if (mainMod != null && report != null)
             {
-                (mainMod.userModInstance as Mod).report.ReportSelf(problem, e);
+                mainModInstance.report.ReportSelf(problem, e);
             }
         }
         bool IAmAware.IsFullyAware()
@@ -636,7 +652,7 @@ namespace HarmonyMod
 #if TRACE
             var origin = Report.FindCallOrigin(new System.Diagnostics.StackTrace(1, false));
             string origin_string = (origin != null && origin.isEnabledNoOverride && origin.userModInstance != null) ? $" on behalf of '{(origin.userModInstance as IUserMod).Name}'" : string.Empty;
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyAccessBeforeAwareness({needHarmon1StateTransfer}){origin_string}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyAccessBeforeAwareness({needHarmon1StateTransfer}){origin_string}");
 #endif
 
             if (!Harmony.Harmony1Patched)
@@ -684,7 +700,7 @@ namespace HarmonyMod
                 throw new HarmonyModACLException($"(Un)Patching {Versioning.PACKAGE_NAME} is prohibited");
             }
 #if HEAVY_TRACE
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows because caller is self or patch is not mine.");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows because caller is self or patch is not mine.");
 #endif
         }
 
@@ -728,7 +744,7 @@ namespace HarmonyMod
                 (patchMethod is HarmonyCHH2040::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as HarmonyCHH2040::HarmonyLib.HarmonyMethod).method) :
                 patchMethod.GetType().FullName;
 
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] PatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to patch {original.DeclaringType.FullName}.{original.Name} with {patchMethodName} as {patchType}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] PatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to patch {original.DeclaringType.FullName}.{original.Name} with {patchMethodName} as {patchType}");
 #endif
             }
 
@@ -737,12 +753,10 @@ namespace HarmonyMod
 
         bool IAmAware.UnpatchACL(MethodBase original, MethodBase caller, MethodInfo patchMethod)
         {
-            // ProhibitPatchingHarmony(original, caller);
-
             ProhibitRemovingHarmony(original, caller, patchMethod);
 
 #if HEAVY_TRACE
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to unpatch {original.DeclaringType.FullName}.{original.Name}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to unpatch {original.DeclaringType.FullName}.{original.Name}");
 #endif
 
             return true;
@@ -758,24 +772,28 @@ namespace HarmonyMod
 
 
 
+
+#pragma warning disable CS0162 // Unreachable code detected
             string mods = string.Empty;
-            foreach (PluginInfo mod in Singleton<PluginManager>.instance.GetPluginsInfo())
+#pragma warning restore CS0162 // Unreachable code detected
+            foreach (PluginInfo plugin in Singleton<PluginManager>.instance.GetPluginsInfo())
             {
-                if (mod.assemblyCount != 0)
+                if (plugin.assemblyCount != 0)
                 {
-                    var refs = mod.userModInstance.GetType().Assembly.GetReferencedAssemblies();
-                    mods += $"{mod.name} - @ {mod.modPath} - enabled={mod.isEnabled} - {mod.assembliesString} - {refs.Length} refs:\n";
-                    foreach (var r in refs)
-                    {
-                        mods += $"       {r.FullName}\n";
-                    }
+                    Log($"[{Versioning.FULL_PACKAGE_NAME}] Enumerate plugin {(plugin != null ? plugin.name : "nul")}");
+                    // var refs = plugin.userModInstance.GetType().Assembly.GetReferencedAssemblies();
+                    // mods += $"{plugin.name} - @ {plugin.modPath} - enabled={plugin.isEnabled} - {plugin.assembliesString} - {refs.Length} refs:\n";
+                    // foreach (var r in refs)
+                    // {
+                    //     mods += $"       {r.FullName}\n";
+                    // }
                 } else
                 {
-                    mods += $"{mod.name} - @ {mod.modPath} - enabled={mod.isEnabled} - {mod.assembliesString} - UNLOADED\n";
+                    mods += $"{plugin.name} - @ {plugin.modPath} - enabled={plugin.isEnabled} - {plugin.assembliesString} - UNLOADED\n";
                 }
             }
 #if DEBUG
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] The following mods are instantiated:\n{mods}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] The following mods are instantiated:\n{mods}");
 #endif
 
             mods = string.Empty;
@@ -786,7 +804,7 @@ namespace HarmonyMod
                 mods += $"    {a.GetName().FullName} - GAC={a.GlobalAssemblyCache} reflectionOnly={a.ReflectionOnly}\n";
             }
 #if DEBUG
-            UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] The following assemblies are currently loaded:\n{mods}");
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] The following assemblies are currently loaded:\n{mods}");
 #endif
 
 
@@ -812,12 +830,14 @@ namespace HarmonyMod
             }
 
 #if DEBUG
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.AutoEnableOnce({deferred}) plugins={mainMod != null}\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
+            LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.AutoEnableOnce({deferred}) plugins={mainMod != null}\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
 #endif
 
             if (mainMod != null)
             {
+#pragma warning disable CS0219 // The variable 'enabled' is assigned but its value is never used
                 bool enabled = false;
+#pragma warning restore CS0219 // The variable 'enabled' is assigned but its value is never used
                 if (!Versioning.IsObsolete(Versioning.Obsolescence.AUTO_MOD_ENABLE, "Auto-Mod Enabling for compatibility with old CitiesHarmony.API"))
                 {
 
@@ -828,7 +848,7 @@ namespace HarmonyMod
 
                     {
 #if DEBUG
-                        UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Found - {mainMod.name} - enabled={mainMod.isEnabled} - {mainMod.assembliesString}");
+                        Log($"[{Versioning.FULL_PACKAGE_NAME}] Found - {mainMod.name} - enabled={mainMod.isEnabled} - {mainMod.assembliesString}");
 #endif
                         if (mainMod.ContainsAssembly(Assembly.GetExecutingAssembly()))
                         {
@@ -837,9 +857,13 @@ namespace HarmonyMod
                                 def: false,
                                 autoUpdate: true);
 
+#if TRACE
+                            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - checking enabled flag at mainMod.modPath={mainMod.modPath} {mainMod.name + mainMod.modPath.GetHashCode().ToString() + ".enabled"}");
+#endif
+
                             if (!oneShotAutoEnable && !oneShotAutoEnable.exists)
                             {
-                                UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Mod is disabled in the Content Manager! Self-enabling now.");
+                                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Mod is disabled in the Content Manager! Self-enabling now.");
 
                                 enabled = true;
                                 firstRun = true;
@@ -849,7 +873,7 @@ namespace HarmonyMod
                             }
                             else
                             {
-                                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING - Mod is disabled in the Content Manager! Self-enabling has already been used.");
+                                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING - Mod is disabled in the Content Manager! Self-enabling has already been used.");
                             }
                         }
                     }
@@ -862,7 +886,7 @@ namespace HarmonyMod
         {
 
 #if DEBUG
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.AutoInstallHelperOnce() plugin={plugin != null}");
+            LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.AutoInstallHelperOnce() plugin={plugin != null}");
 #endif
 
 
@@ -881,7 +905,7 @@ namespace HarmonyMod
                         def: false,
                         autoUpdate: true).value = true;
 
-                    UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Installing local HELPER");
+                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Installing local HELPER");
 
                     FileSystemUtils.CopyDirectoryFiltered(
                         plugin.modPath,
@@ -926,7 +950,7 @@ namespace HarmonyMod
         static bool CopyAllButMyAssembly(string filename) {
             bool result = !filename.EndsWith(Assembly.GetExecutingAssembly().GetName().Name + ".dll") ||
                 !filename.EndsWith(Assembly.GetExecutingAssembly().GetName().Name + "_helper_dll");
-            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO - CopyAllButMyAssembly({filename}) = {result}");
+            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO - CopyAllButMyAssembly({filename}) = {result}");
             return result;
         }
 #endif
@@ -945,11 +969,14 @@ namespace HarmonyMod
                 /* used when installing the helper for the first time,
                  * before handover
                  */
-                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - (no mainMod) {Report.SelfProblemText(problem)}: {Report.ExMessage(e, true, 1)}");
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - (no mainMod) {Report.SelfProblemText(problem)}: {Report.ExMessage(e, true, 1)}");
             } else
             {
                 /* this should also include an indication of who is reporting (eg, helper) */
-                (mainMod.userModInstance as IAmAware).SelfReport(problem, e);
+                // LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - Reported Self (debugger={System.Diagnostics.Debugger.IsAttached})\n{new System.Diagnostics.StackTrace(true)}");
+                // System.Diagnostics.Debugger.Log(1, "Self", Report.SelfProblemText(problem));
+                (mainModInstance as IAmAware).SelfReport(problem, e);
+                
             }
         }
 

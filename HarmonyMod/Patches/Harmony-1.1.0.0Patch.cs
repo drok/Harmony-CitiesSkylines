@@ -53,7 +53,9 @@ namespace HarmonyMod.MyPatches.Harmony_1_1_0_0
         {
             if (!done)
             {
+#if TRACE
                 UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Transferring Harmony {assembly.GetName().Version} state");
+#endif
 
                 try
                 {
@@ -145,7 +147,9 @@ namespace HarmonyMod.MyPatches.Harmony_1_1_0_0
                         });
 
                     processors.Do((p) => p.Patch());
+#if TRACE
                     UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Transferred patches for {processors.Count} methods from {assembly.GetName().Version}");
+#endif
                 }
                 catch (Exception e)
                 {

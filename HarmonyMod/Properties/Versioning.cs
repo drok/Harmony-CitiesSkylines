@@ -16,8 +16,6 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 [assembly: AssemblyVersion(HarmonyMod.Versioning.MyAssemblyVersion)]
 [assembly: AssemblyFileVersion(HarmonyMod.Versioning.MyFileVersion)]

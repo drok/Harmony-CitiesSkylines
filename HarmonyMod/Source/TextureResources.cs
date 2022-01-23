@@ -22,6 +22,8 @@ namespace HarmonyMod
     using System.Reflection;
     using System;
     using UnityEngine;
+    using static UnityEngine.Debug;
+
 
     public static class TextureResources {
         static TextureResources() {
@@ -45,7 +47,7 @@ namespace HarmonyMod
 
                 return texture;
             } catch (Exception e) {
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Failed Loading DllResource: {Report.ExMessage(e, true)}");
+                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Failed Loading DllResource: {Report.ExMessage(e, true)}");
                 return null;
             }
         }
@@ -89,7 +91,7 @@ namespace HarmonyMod
                 return buffer;
             }
             catch (Exception e) {
-                UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Failed Reading stream: {Report.ExMessage(e, true)}");
+                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Failed Reading stream: {Report.ExMessage(e, true)}");
                 return null;
             }
             finally

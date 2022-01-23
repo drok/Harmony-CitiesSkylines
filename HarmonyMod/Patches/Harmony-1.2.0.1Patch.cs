@@ -34,12 +34,16 @@ namespace HarmonyMod.MyPatches.Harmony_1_2_0_1
 
         static Apply()
         {
-            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Apply {To}");
+#if TRACE
+            UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Apply patches to HarmonyLib {To}");
+#endif
             Patcher.harmonyAssembly.TryGetValue(Apply.To, out targetAssembly);
 
             if (targetAssembly != null)
             {
+#if TRACE
                 UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Transfer {targetAssembly.GetName().FullName}");
+#endif
                 StateTransfer.Transfer(targetAssembly);
             }
         }
@@ -53,8 +57,9 @@ namespace HarmonyMod.MyPatches.Harmony_1_2_0_1
         {
             if (!done)
             {
+#if TRACE
                 UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Transferring Harmony {assembly.GetName().Version} state");
-
+#endif
                 try
                 {
 
@@ -147,7 +152,9 @@ namespace HarmonyMod.MyPatches.Harmony_1_2_0_1
                         });
 
                     processors.Do((p) => p.Patch());
+#if TRACE
                     UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Transferred patches for {processors.Count} methods from {assembly.GetName().Version}");
+#endif
                 }
                 catch (Exception e)
                 {

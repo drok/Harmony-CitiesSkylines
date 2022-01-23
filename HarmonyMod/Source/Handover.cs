@@ -19,9 +19,7 @@ extern alias Harmony2;
 using IAwareness;
 using System;
 using System.Reflection;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ColossalFramework;
 using ColossalFramework.PlatformServices;
 using ColossalFramework.Plugins;
@@ -36,9 +34,10 @@ namespace HarmonyMod
         PluginInfo m_self;
         PluginInfo m_mainMod;
 
-        internal Handover (IAmAware selfMod)
+        internal Handover(IAmAware selfMod)
         {
-            m_self = Singleton<PluginManager>.instance.GetPluginsInfo().First((x) => {
+            m_self = Singleton<PluginManager>.instance.GetPluginsInfo().First((x) =>
+            {
                 try
                 {
                     return x.isEnabledNoOverride && x.userModInstance == selfMod;
@@ -56,6 +55,14 @@ namespace HarmonyMod
             });
 
             DisableHarmonyFromBoformer();
+        }
+
+        internal void UpdateSelf(Loaded selfMod)
+        {
+            Assert.IsTrue(m_self == m_mainMod,
+                "Only the main mod should update the refs");
+            m_self = selfMod;
+            m_mainMod = selfMod;
         }
 
         internal PluginInfo mainMod(bool? mainEnabled = null)
@@ -140,11 +147,11 @@ namespace HarmonyMod
                                 /* Query if it is firstRun (not fully aware). If any instance is first run, all are, but only one can detect. */
                                 if (!Mod.firstRun && assembly != Assembly.GetExecutingAssembly())
                                 {
-						            Mod.firstRun = !assembly.GetTypes()
+                                    Mod.firstRun = !assembly.GetTypes()
                                     .Where(p => typeof(IAmAware).IsAssignableFrom(p) && p.IsClass && !p.IsAbstract)
                                     .Any((p) => (Activator.CreateInstance(p) as IAmAware).IsFullyAware());
 #if TRACE
-                                    UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Other instance is firstRun={Mod.firstRun}");
+                                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Other instance is firstRun={Mod.firstRun}");
 #endif
                                 }
                                 if (m_mainMod == null || name.Version >= mainModVersion)
@@ -153,10 +160,11 @@ namespace HarmonyMod
                                     mainModVersion = name.Version;
                                     isMainMod = info == m_self;
 #if TRACE
-                                    UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Handover..get_mainMod() current best {mainModVersion}");
+                                    UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Handover..get_mainMod() current best {mainModVersion}");
 #endif
                                 }
-                            } else
+                            }
+                            else
                             {
                                 break;
                             }
@@ -197,14 +205,14 @@ namespace HarmonyMod
                 var helperDescription = (helperMod != null) ? $" Helper={helperMod.userModInstance.GetType().FullName}, {helperMod.userModInstance.GetType().Assembly.GetName().Version}" : string.Empty;
 #if TRACE
 #if DEVELOPER
-                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Handover..get_mainMod() Result: isFirst={isFirst} isMainMod={isMainMod} isLocal={isLocal} isHelper={isHelper} isHelperFirst={isHelperFirst} isHelperLocal={isHelperLocal} mainModVersion={mainModVersion}{helperDescription}. I am {m_self.name}");
+                UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Handover..get_mainMod() Result: isFirst={isFirst} isMainMod={isMainMod} isLocal={isLocal} isHelper={isHelper} isHelperFirst={isHelperFirst} isHelperLocal={isHelperLocal} mainModVersion={mainModVersion}{helperDescription}. I am {m_self.name}");
 #else
-                UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Handover..get_mainMod() Result: isFirst={isFirst} isMainMod={isMainMod} isLocal={isLocal} isHelper={isHelper} isHelperFirst={isHelperFirst} mainModVersion={mainModVersion}{helperDescription}. I am {m_self.name}");
+                UnityEngine.Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Handover..get_mainMod() Result: isFirst={isFirst} isMainMod={isMainMod} isLocal={isLocal} isHelper={isHelper} isHelperFirst={isHelperFirst} mainModVersion={mainModVersion}{helperDescription}. I am {m_self.name}");
 #endif
 #endif
             }
 #endif
-                return m_mainMod;
+            return m_mainMod;
         }
 
         internal PluginInfo self { get { return m_self; } }
@@ -240,8 +248,6 @@ namespace HarmonyMod
             var selfAware = m_self.userModInstance as IAmAware;
             Assert.IsTrue(m_self == m_mainMod,
                 "Only the main mod should notify others");
-            Assert.IsNotNull(helperMod,
-                "Others should only be notified if a helper exists");
             Assert.IsNotNull(selfAware,
                 $"Self should be an {typeof(IAmAware).Name} instance");
 
