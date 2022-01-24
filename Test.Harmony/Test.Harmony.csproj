@@ -26,6 +26,9 @@
 	<ItemGroup Condition="'$(Configuration)'!='API 0.9.0'">
 		<PackageReference Include="CitiesHarmony.API" Version="$(Configuration.Substring(3))" />
 	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\IAmAware\IAwareness0.csproj" />
+	</ItemGroup>
 
 	<ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -35,9 +38,6 @@
     <Reference Include="ColossalManaged">
       <HintPath>C:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="IAmAware">
-      <HintPath>C:\References\IAmAware-0.0.1.0.dll</HintPath>
     </Reference>
     <Reference Include="ICities">
       <HintPath>C:\References\ICities.dll</HintPath>
