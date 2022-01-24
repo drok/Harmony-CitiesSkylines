@@ -124,6 +124,7 @@ compatibility management, exception management, etc</Description>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>
     <ProjectReference Include="..\IAmAware\IAwareness0.csproj" />
+    <ProjectReference Include="..\MonoMod.Common\MonoMod.Common.csproj" />
     <Reference Include="Assembly-CSharp">
       <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>

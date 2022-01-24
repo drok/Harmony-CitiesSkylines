@@ -22,9 +22,6 @@ namespace HarmonyManager
 
         public IEnumerable<string> UnzipTo(string destDir)
         {
-#if TRACE
-            Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Unzipping {zipName} to {destDir}");
-#endif
             bool zippedDirectory = false;
             string zippedDirectoryName = null;
             var fileList = new List<string>();
@@ -40,9 +37,6 @@ namespace HarmonyManager
                         */
                     while (inputStream.GetNextEntry() is ZipEntry zipEntry)
                     {
-#if TRACE
-                        Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Found in zip: {zipEntry.Name}");
-#endif
                         if (zipEntry.IsDirectory && !zippedDirectory)
                         {
                             zippedDirectory = true;
@@ -88,21 +82,12 @@ namespace HarmonyManager
                         {
                             dest = Path.Combine(destDir, zipEntry.Name);
                         }
-#if TRACE
-                        Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Calculated Path: {dest} (zippedDirectory={zippedDirectory} zippedDirectoryName={zippedDirectoryName}");
-#endif
                         if (zipEntry.IsDirectory)
                         {
-#if TRACE
-                            Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Should create Dir {dest}");
-#endif
                             Directory.CreateDirectory(dest);
                         }
                         else
                         {
-#if TRACE
-                            Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Should unzip {zipName} to {destDir} => {dest}");
-#endif
                             fileList.Add(dest);
                             using (FileStream streamWriter = File.Create(dest))
                             {

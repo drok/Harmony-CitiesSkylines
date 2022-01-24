@@ -5,18 +5,22 @@
     <TargetFramework>net35</TargetFramework>
     <AssemblyTitle>Lib.Harmony Helper for Cities: Skylines</AssemblyTitle>
     <Company>Radu Hociung</Company>
-    <Description>Auto-installs and gives access to the Harmony Mod from the Steam Workshop</Description>
+    <Description>Installs the Harmony library/mod if needed, and hands-over to the client mod.
+	If the existing Harmony is outdated, it is upgraded from GitHub releases.
+	</Description>
     <Copyright>Copyright 2021 Radu Hociung</Copyright>
-    <Version>0.9.0.39</Version>
+    <Version>0.9.0-rc010</Version>
     <Authors>Radu Hociung</Authors>
     <PackageId>Harmony-CitiesSkylines</PackageId>
     <PackageProjectUrl>https://github.com/drok/Harmony-CitiesSkylines</PackageProjectUrl>
-    <PackageReleaseNotes>This is a drop-in replacement for CitiesHarmony.API by boformer, which subscribes the new Harmony Mod instead of boformer's</PackageReleaseNotes>
+    <PackageReleaseNotes>This is the first release of the API</PackageReleaseNotes>
     <PackageTags>Games Modding Patching</PackageTags>
     <PackageIcon>package_icon.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <LangVersion>latest</LangVersion>
+
+	  <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
 		<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
@@ -26,7 +30,8 @@
 		<GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
 		<AssemblyName>Harmony-CitiesSkylines</AssemblyName>
 	  <EnableDefaultItems>false</EnableDefaultItems>
-  </PropertyGroup>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
 	<PropertyGroup>
 		<DelaySign>false</DelaySign>
 		<SignAssembly>true</SignAssembly>
@@ -48,20 +53,20 @@
 		<DefineConstants>CALLBACK_UNAVAILABLE_ON_DISABLED_HARMONY</DefineConstants>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<DefineConstants>DEBUG;TRACE;HEAVY_TRACE;MODMANAGER;UNITY_ASSERTIONS;CALLBACK_UNAVAILABLE_ON_DISABLED_HARMONY</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Installer'">
 		<DefineConstants>DEBUG;TRACE;HEAVY_TRACE;MODMANAGER;UNITY_ASSERTIONS;CALLBACK_UNAVAILABLE_ON_DISABLED_HARMONY</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Include="..\HarmonyMod\Source\Item\_GitHubRelease.cs" Link="_GitHubRelease.cs" />
 	  <Compile Include="InstallerLite.cs" />
 	  <Compile Include="Properties\AssemblyInfo.cs" />
 	  <Compile Include="Harmony.cs" />
 	  <Compile Include="HarmonyAPIException.cs" />
-	  <Compile Include="Properties\Settings.Designer.cs">
-	    <DesignTimeSharedInput>True</DesignTimeSharedInput>
-	    <AutoGen>True</AutoGen>
-	    <DependentUpon>Settings.settings</DependentUpon>
-	  </Compile>
 	  <Compile Include="Properties\Versioning.cs" />
 	  <Compile Include="Zip.cs" />
 	</ItemGroup>
@@ -103,6 +108,7 @@
 	  <ProjectReference Include="..\IAmAware\IAwareness0.csproj">
 	    <Private>false</Private>
 	    <PrivateAssets>all</PrivateAssets>
+	    <Aliases></Aliases>
 	  </ProjectReference>
 	</ItemGroup>
 	<ItemGroup>

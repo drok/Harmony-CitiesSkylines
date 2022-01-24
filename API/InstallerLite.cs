@@ -1,4 +1,21 @@
-﻿using System;
+﻿/*
+ * Harmony for Cities Skylines
+ *  Copyright (C) 2021 Radu Hociung <radu.csmods@ohmi.org>
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the modified GNU General Public License as
+ *  published in the root directory of the source distribution.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  modified GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,38 +23,66 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 using static UnityEngine.Debug;
+using static UnityEngine.Assertions.Assert;
 using System.IO;
 using System.Reflection;
 using ColossalFramework;
+using static ColossalFramework.PlatformServices.PlatformService;
+using static ColossalFramework.Plugins.PluginManager;
+using ColossalFramework.PlatformServices;
 using ColossalFramework.Plugins;
 using ColossalFramework.UI;
 using ColossalFramework.IO;
 using ColossalFramework.HTTP;
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.Core;
+using GitHub;
+using UnityEngine.SceneManagement;
 
 namespace HarmonyManager
 {
+    internal static class _InstallerLite
+    {
+#if DEBUG
+        public const int NETWORK_UNAVAILABLE_RETRY_DELAY = 5;
+        public const int SERVICE_UNAVAILABLE_RETRY_DELAY = 5;
+        public const int WEBREQUEST_TIMEOUT = 5;
+#else
+        /* Delay before retrying a WebRequest that failed to connect */
+        public const int NETWORK_UNAVAILABLE_RETRY_DELAY = 10;
+
+        /* Delay before retrying a WebRequest that failed due to service unavailable (server reported problem) */
+        public const int SERVICE_UNAVAILABLE_RETRY_DELAY = 30;
+
+        /* How long can a HTTP request take? */
+        public const int WEBREQUEST_TIMEOUT = 60;
+#endif
+
+    }
+
     internal class InstallerLite : MonoBehaviour
     {
+        internal static bool needsUpdate = false;
+        internal static bool downloadSuccess = false;
+        internal static MethodInfo InstallerRunMethod = default(MethodInfo);
         static bool skipConfirmation = false;
-        static PluginManager.PluginInfo requestingMod = default(PluginManager.PluginInfo);
+        static PluginManager.PluginInfo installInitiator = default(PluginManager.PluginInfo);
+        static UnityEngine.Events.UnityAction<Scene, LoadSceneMode> onSceneLoaded = null;
         static SavedBool confirmation;
         YieldInstruction downloadError = new YieldInstruction();
         YieldInstruction saveError = new YieldInstruction();
+        static object installer = null;
+        static bool isWorkshopItem = false;
+        static string homeDir = null;
+        static string dlDir = null;
+        static readonly PublishedFileId workshopHarmony = new PublishedFileId(2399343344);
 
-        //MethodInfo pluginManagerFSHanderInstaller;
-        // MethodInfo loadPluginAtPath;
 #if BUGFIXED_RESILIENT_MOD_UNLOAD
         MethodInfo removePluginAtPath;
 #endif
         public void Awake()
         {
             Log($"[{Versioning.FULL_PACKAGE_NAME}] InstallerLite.Awake() at \n{new System.Diagnostics.StackTrace(true)}");
-
-            // loadPluginAtPath = typeof(PluginManager)
-            //     .GetMethod("LoadPluginAtPath", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-            // Log($"[{Versioning.FULL_PACKAGE_NAME}] loadPluginAtPath={loadPluginAtPath}");
 
             var unitySdk =
                 Path.Combine(
@@ -64,10 +109,10 @@ namespace HarmonyManager
         {
             PluginManager pmInst = Singleton<PluginManager>.instance;
 
-            //var confirmation = UIView.library.ShowModal<ConfirmPanel>("ExitConfirmPanel", delegate (UIComponent comp, int ret)
             if (!skipConfirmation)
             {
-                ConfirmPanel.ShowModal(title: "Harmony Installation", message: $"Install Harmony Locally (needed for {requestingMod.name})?", delegate (UIComponent comp, int ret)
+
+                ConfirmPanel.ShowModal(title: "Harmony Installation", message: $"Install Harmony Locally (needed for {installInitiator.name})?", delegate (UIComponent comp, int ret)
                 {
                     LogError($"[{Versioning.FULL_PACKAGE_NAME}] Confirmation : {ret}");
                     switch (ret)
@@ -76,9 +121,6 @@ namespace HarmonyManager
                             confirmation.value = true;
                             InstallHarmony();
                             break;
-                        //                    case 1: /* no */
-                        //                        StartCoroutine(HttpGet(api + HarmonyGithubDistributionURL + "/releases/latest", HandleDownload));
-                        //                        break;
                         default:
                             InstallAborted();
                             break;
@@ -93,140 +135,71 @@ namespace HarmonyManager
                  */
                 InstallHarmony();
             }
-            // confirmation.SetMessage(
-            //     message: "Install Harmony Locally?",
-            //     title: "Harmony Installation");
         }
 
         void InstallHarmony()
         {
             string api = "https://api.github.com/repos/";
-            string endpoint = "/releases/tags/" + Versioning.HARMONY_RELEASE_TAG;
+            string endpoint;
+
+            if (!needsUpdate) // ie, if it's not an in-place update, it's a local install
+            {
+                dlDir = Path.Combine(DataLocation.tempFolder, Versioning.HarmonyInstallDir + ".dl");
+                homeDir = Path.Combine(DataLocation.modsPath, Versioning.HarmonyInstallDir);
+            }
+
+            endpoint = "/releases/tags/" + Versioning.HARMONY_LEGACY_UPDATE_TAG;
+
             StartCoroutine(HttpGet(api + Versioning.HarmonyGithubDistributionURL + endpoint, true, null, HandleRelease));
         }
 
         private IEnumerable<YieldInstruction> HandleRelease(UnityWebRequest request, Hashtable assetUnused)
         {
-            // string etag = request.GetResponseHeader("Etag");
             var releaseInfo = JSON.JsonDecode(Encoding.UTF8.GetString(request.downloadHandler.data)) as Hashtable;
-
-
-            // string s = string.Empty;
-            // foreach (var i in releaseInfo.Keys)
-            // {
-            //     s += i + " => " + releaseInfo[i] + "\n";
-            // }
-            // Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] got response: {s}");
-
-            //             Release rel = JsonUtility.FromJson<Release>(Encoding.UTF8.GetString(request.downloadHandler.data));
             if (releaseInfo != null)
             {
-                Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] found release {releaseInfo["id"]} = {releaseInfo["name"]}");
-                var assets = releaseInfo["assets"] as ArrayList;
-                Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] found {assets.Count} assets in release {releaseInfo["name"]}");
+                var assets = releaseInfo[_GitHubRelease.REL_ASSETS] as ArrayList;
 
-                var destdir = Path.Combine(DataLocation.modsPath, Versioning.HarmonyInstallDir);
-
-#if BUGFIXED_RESILIENT_MOD_UNLOAD
-                if (Directory.Exists(destdir))
-                {
-                    /*
-                     * CO's plugin manager fails if the mod being removed is corrupt and
-                     * throws ReflectionTypeLoadException
-                     * Thus attempting to do a clean unload is futile unless a cleaner plugin manager
-                     * is present.
-                     */
-                    try
-                    {
-                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Removing existing plugin at {destdir}");
-                        removePluginAtPath.Invoke(Singleton<PluginManager>.instance, new object[] { destdir, });
-
-                    }
-                    catch (Exception ex)
-                    {
-                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] loading plugin threw: {ex.GetType().Name}: {ex.Message}");
-                    }
-                }
-#endif
-                var destDir = Path.Combine(DataLocation.tempFolder, Versioning.HarmonyInstallDir);
                 bool error = false;
                 try
                 {
-                    Directory.CreateDirectory(destDir);
+                    Directory.CreateDirectory(dlDir);
                 }
                 catch (Exception ex) { LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Creating temp download directory: {ex.Message}"); error = true; }
 
 
                 if (!error)
                 {
-                    foreach (Hashtable asset in releaseInfo["assets"] as ArrayList)
+                    var wantedFilename = needsUpdate ? Versioning.UPDATE_FILENAME : Versioning.INSTALL_FILENAME;
+                    foreach (Hashtable asset in releaseInfo[_GitHubRelease.REL_ASSETS] as ArrayList)
                     {
-                        string url = asset["browser_download_url"] as string;
-                        if (url != null && (asset["content_type"] as string) == "application/zip")
+                        string url = asset[_GitHubRelease.ASSET_DOWNLOAD_URL] as string;
+                        if (url != null &&
+                            (asset[_GitHubRelease.ASSET_CONTENT_TYPE] as string) == "application/zip" &&
+                            (asset[_GitHubRelease.ASSET_FILENAME] as string).StartsWith(wantedFilename))
                         {
-                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] found asset {asset["id"]} type = {asset["content_type"]} name = {asset["name"]}");
-
                             var download = HttpGet(url, false, asset, HandleDownload);
                             do
                             {
                                 error = download.Current == saveError || download.Current == downloadError;
-                                LogError($"[{Versioning.FULL_PACKAGE_NAME}] download.Current={download.Current != null} error={error}");
                                 yield return download.Current;
                             } while (!error && download.MoveNext());
 
-                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] after loop download.Current={download.Current != null} error={error}");
-
-                            // if (download.Current == null)
-                            //     break;
-                            // foreach (var action in HttpGet(url, false, HandleDownload))
-                            // {
-                            //     yield return action;
-                            // }
-
-                            // foreach (var dl in HttpGet(url, false, HandleDownload))
-                            // {
-                            //     yield return dl;
-                            // }
                             if (error)
                                 break;
                         }
                     }
-                }
-                if (!error)
-                {
-                    InstallSuccess(destdir, releaseInfo);
-                }
-
-
-#if false
-                Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] json found release {rel.id}  assets={rel.assets != null} test_ints={rel.test_ints != null} ta={rel.ta != null} ta1={rel.ta1 != null}" +
-                    $"\n{Encoding.UTF8.GetString(request.downloadHandler.data)}");
-                if (rel.test_ints != null)
-                {
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] json found {rel.test_ints.Count} test_ints");
-                }
-                if (rel.ta != null)
-                {
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] json found {rel.ta.Count} TA");
-                }
-                if (rel.ta != null)
-                {
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] json found {rel.ta1.id} TA1");
-                }
-                if (rel.assets != null)
-                {
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] found {rel.assets.Count} assets");
-                    foreach (var asset in rel.assets.Where(asset => asset.content_type == "application/zip"))
+                    if (!error)
                     {
-                        Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] will download asset {asset.id}");
-                        // request.url = asset.Url;
-                        HttpGet(asset.url, false, HandleDownload);
-                        assetFound = true;
-                        // yield return request.Send();
-                        // StartCoroutine(HttpGet(asset.Url, HandleDownload, false));
+                        if (downloadSuccess)
+                            InstallSuccess(releaseInfo);
+                        else
+                        {
+                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] Release assets not found ({wantedFilename})");
+                            InstallFailed(); // Release not available
+                        }
                     }
                 }
-#endif
             } else
             {
                 var z = JSON.JsonDecode(Encoding.UTF8.GetString(request.downloadHandler.data));
@@ -236,9 +209,6 @@ namespace HarmonyManager
                 }
             }
 
-
-            // return assetFound;
-            //}
             yield break;
         }
 
@@ -247,96 +217,103 @@ namespace HarmonyManager
             LogError($"[{Versioning.FULL_PACKAGE_NAME}] Install ABORTED");
             Harmony.OnInstallAborted();
         }
-        void InstallSuccess(string modHome, Hashtable release)
+        void InstallSuccess(Hashtable release)
         {
-            var dlDir = Path.Combine(DataLocation.tempFolder, Versioning.HarmonyInstallDir);
             var myItemBranch = "G/" + Versioning.HarmonyGithubDistributionURL;
 
-            SavedString installed = new SavedString(myItemBranch + "[installed]", Settings.userGameState, string.Empty, true);
-            installed.value = myItemBranch + "/" + (release["target_commitish"] as string) + "/" + (release["tag_name"] as string);
-
-            bool needsBackup = Directory.Exists(modHome);
+            SavedString installed = new SavedString(myItemBranch + "/installed", Settings.userGameState, string.Empty, true);
+            installed.value = (release[_GitHubRelease.REL_TARGET] as string) + "/" + (release[_GitHubRelease.REL_TAG_NAME] as string);
             bool failed = false;
-            var bakdir = Path.Combine(DataLocation.tempFolder, Versioning.HarmonyInstallDir + ".bak");
-            if (needsBackup)
+            if (dlDir != homeDir)
             {
-                try { Directory.Move(modHome, bakdir); }
-                catch (Exception ex) { LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Backup original Harmony Failed: {ex.Message}"); failed = true; }
-            }
-
-            if (!failed)
-            {
-                try { Directory.Move(dlDir, modHome); }
-                catch (Exception ex) { LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Installing new Harmony failed: {ex.Message}"); failed = true; }
-
+                bool needsBackup = Directory.Exists(homeDir);
+                var bakdir = isWorkshopItem ?
+                    homeDir + ".bak"
+                    : Path.Combine(DataLocation.tempFolder, Versioning.HarmonyInstallDir + ".bak");
                 if (needsBackup)
                 {
-                    try
+                    try { Directory.Move(homeDir, bakdir); }
+                    catch (Exception ex) { LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Backup original Harmony Failed: {ex.Message}"); failed = true; }
+                }
+
+                if (!failed)
+                {
+                    try { Directory.Move(dlDir, homeDir); }
+                    catch (Exception ex) { LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Installing new Harmony failed: {ex.Message}"); failed = true; }
+
+                    if (isWorkshopItem)
                     {
-                        if (failed)
-                        {
-                            Directory.Move(bakdir, modHome);
-                        }
-                        else
-                        {
-                            Directory.Delete(bakdir, true);
-                        }
+                        new SavedBool(name: workshopHarmony.ToString() + homeDir.GetHashCode().ToString() + ".enabled",
+                            fileName: Settings.userGameState,
+                            def: false,
+                            autoUpdate: true).value = true;
                     }
-                    catch (Exception ex) { LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Cleanup after Harmony install failed: {ex.Message}"); failed = true; }
+                    else
+                    {
+                        new SavedBool(name: Versioning.HarmonyInstallDir + homeDir.GetHashCode().ToString() + ".enabled",
+                            fileName: Settings.userGameState,
+                            def: false,
+                            autoUpdate: true).value = true;
+                    }
+
+                    if (needsBackup)
+                    {
+                        try
+                        {
+                            if (failed)
+                            {
+                                Directory.Move(bakdir, homeDir);
+                            }
+                            else
+                            {
+                                Directory.Delete(bakdir, true);
+                            }
+                        }
+                        catch (Exception ex) { LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Cleanup after Harmony install failed: {ex.Message}"); failed = true; }
+                    }
                 }
             }
-            if (!failed)
-                LogError($"[{Versioning.FULL_PACKAGE_NAME}] Install SUCCESS");
-
+            if (isWorkshopItem) {
+                var LoadPluginAtPath = typeof(PluginManager).GetMethod("LoadPluginAtPath", BindingFlags.NonPublic | BindingFlags.Instance);
+                LoadPluginAtPath?.Invoke(Singleton<PluginManager>.instance, new object[] { homeDir, false, workshopHarmony });
+            }
         }
         private void InstallFailed()
         {
-            LogError($"[{Versioning.FULL_PACKAGE_NAME}] Install FAILED 6 {Assembly.GetExecutingAssembly().GetName().Version}");
+            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING - {(needsUpdate ? "Updating" : "Installing")} Harmony FAILED");
             Harmony.OnUnavailable(Harmony.HarmonyUnavailableReason.InstallationFailed);
         }
         void InstallComplete()
         {
-            LogError($"[{Versioning.FULL_PACKAGE_NAME}] Install Complete {Assembly.GetExecutingAssembly().GetName().Version}");
             Destroy(gameObject);
         }
 
         private IEnumerable<YieldInstruction> HandleDownload(UnityWebRequest request, Hashtable asset)
         {
-            //            var cwd = Directory.GetCurrentDirectory();
             /* Unzip */
-            string etag = request.GetResponseHeader("Etag");
-#if TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] received download {etag} (type={request.GetResponseHeader("Content-Type")} asset-type={asset["content_type"]} {request.downloadHandler.data.Length} bytes) as {asset["name"] ?? "null"}");
-#endif
 
             bool error = false;
             try
             {
-                var destDir = Path.Combine(DataLocation.tempFolder, Versioning.HarmonyInstallDir);
-
-                if (asset["content_type"] as string == "application/zip")
+                var name = asset[_GitHubRelease.ASSET_FILENAME] as string;
+                if (asset[_GitHubRelease.ASSET_CONTENT_TYPE] as string == "application/zip")
                 {
-#if TRACE
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}] Should unzip {name} to {destDir}");
-#endif
-                    new Zip(request.downloadHandler.data, name).UnzipTo(destDir);
+                    new Zip(request.downloadHandler.data, name).UnzipTo(dlDir);
+                    downloadSuccess = true;
                 }
                 else
                 {
-                    var filename = Path.Combine(destDir, name);
+                    var filename = Path.Combine(dlDir, name);
                     File.WriteAllBytes(filename, request.downloadHandler.data);
                 }
             }
             catch (Exception ex)
             {
-                LogError($"[{Versioning.FULL_PACKAGE_NAME}] Handling downloaded {asset["name"]} failed: {ex.Message} at\n{ex.StackTrace}");
-                InstallFailed();
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] Handling downloaded {asset[_GitHubRelease.ASSET_FILENAME]} failed: {ex.Message} at\n{ex.StackTrace}");
+                InstallFailed(); // Probably out of disk space, permissions, or similar
                 error = true;
             }
 
-//#if TRACE
-            // yield return new WaitForSeconds(5);
-//#endif
             if (error)
                 yield return saveError;
         }
@@ -353,51 +330,31 @@ namespace HarmonyManager
                         "&#40" +
                         Uri.EscapeUriString(Versioning.ISSUES_URL) +
                         "&#41";
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Setting User-Agent: {user_agent}");
                     request.SetRequestHeader("user-agent", user_agent);
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] User-Agent OK");
                     var accept = isJson ? "application/vnd.github.v3+json" : "application/octet-stream";
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Setting Accept: {accept}");
                     request.SetRequestHeader("Accept", accept);
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] Accept OK");
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] sending web req {request.url} from\n{new System.Diagnostics.StackTrace(true)}");
                     yield return request.Send();
-
-                    Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] WWW got code {request.responseCode} for {request.url}");
 
                     switch (request.responseCode)
                     {
                         case 200:
-                            // yield return (YieldInstruction)DownloadHandler(request, request.GetResponseHeader("Etag"));
                             foreach (var action in downloadHandler(request, asset))
                             {
                                 yield return action;
                             }
-                            // {
-                            //     InstallFailed();
-                            // }
                             done = true;
                             break;
-                        //case 302:
-                        //    request.url = request.GetResponseHeader("Location");
-                        //    done = request.url == null;
-                        //    if (!done)
-                        //    {
-                        //        Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] WWW got redirect to {request.url} - following");
-                        //    }
-                        //    break;
                         case 403: /* Rate Limit */
                         case 502: /* bad gateway */
                         case 500: /* Internal server error */
                         case 503: /* Service unavailable */
                         case 504: /* gateway timeout */
-                            int delay = 5;
-                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] will try again in {delay}");
-                            yield return new WaitForSeconds(delay);
+                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] will try again in {_InstallerLite.SERVICE_UNAVAILABLE_RETRY_DELAY}");
+                            yield return new WaitForSeconds(_InstallerLite.SERVICE_UNAVAILABLE_RETRY_DELAY);
                             break;
 
                         default:
-                            InstallFailed();
+                            InstallFailed(); // Server will not give it.
                             done = true;
                             yield return downloadError;
                             break;
@@ -411,51 +368,104 @@ namespace HarmonyManager
             } while (!done);
         }
 
-        internal static void Install(ref object installer, PluginManager.PluginInfo plugin, bool autoInstall)
+        internal static void StartUpdates(object awarenessInstance)
+        {
+            needsUpdate = awarenessInstance.GetType().Assembly.GetName().Version < new Version(1, 0, 1, 0);
+
+            if(needsUpdate)
+            {
+            string path = workshop.GetSubscribedItemPath(workshopHarmony);
+
+
+                    homeDir = path;
+                    dlDir = path + ".dl";
+                    isWorkshopItem = true;
+
+                Fuck_OFF_hijacker();
+                    StartUpdate();
+                }
+            }
+        internal static void Install(PluginManager.PluginInfo requestingPlugin, bool autoInstall)
         {
             skipConfirmation |= autoInstall;
 
             if (!skipConfirmation)
             {
-                confirmation = new SavedBool(name: plugin.name + plugin.modPath.GetHashCode().ToString() + ".harmony",
+                confirmation = new SavedBool(name: requestingPlugin.name + requestingPlugin.modPath.GetHashCode().ToString() + ".harmony",
                     fileName: Settings.userGameState,
                     def: false,
                     autoUpdate: true);
                 skipConfirmation |= confirmation.value;
             }
 
+            if (installInitiator == null && !autoInstall)
+                installInitiator = requestingPlugin;
+
             if (installer == null && (skipConfirmation || UIView.library != null))
             {
-                requestingMod = plugin;
-                GameObject gameObject = new GameObject("HarmonyInstallerObj");
-                installer = gameObject.GetComponent("HarmonyInstaller");
-                if (installer == null)
+                StartInstaller();
+            }
+            else if (UIView.library == null && onSceneLoaded == null)
+            {
+                onSceneLoaded = new UnityEngine.Events.UnityAction<Scene, LoadSceneMode>(OnSceneLoaded);
+                SceneManager.sceneLoaded += onSceneLoaded;
+            }
+
+        }
+        public static void OnSceneLoaded(Scene s, LoadSceneMode m)
+        {
+            if (UIView.library != null)
+            {
+                SceneManager.sceneLoaded -= onSceneLoaded;
+                onSceneLoaded = null;
+                if (Harmony.CO_Harmony_installer == null)
                 {
-                    installer = gameObject.AddComponent<InstallerLite>();
-                    DontDestroyOnLoad(gameObject);
+                    StartInstaller();
+                } else
+                {
+                    Log($"[{Versioning.FULL_PACKAGE_NAME}] (Harmony not found) Enabled Harmony Installer: {Harmony.CO_Harmony_installer.name}; Skipping my installation.");
                 }
             }
         }
-        internal static void CancelInstall(ref object installer)
+
+        internal static void Fuck_OFF_hijacker()
+        {
+            if (GameObject.Find("Harmony2SubscriptionWarning") is GameObject prompt)
+            {
+                GameObject.DestroyImmediate(prompt);
+            }
+            else
+                new GameObject("Harmony2SubscriptionWarning").SetActive(false);
+        }
+
+        internal static void StartUpdate()
+        {
+            skipConfirmation = true; // If it needs update, no need for further confirmations
+
+            StartInstaller();
+        }
+
+        internal static void StartInstaller()
+        {
+            IsNull(installer, "Updates should start only at init");
+
+            GameObject gameObject = new GameObject("HarmonyInstallerObj");
+            installer = gameObject.GetComponent("HarmonyInstaller");
+            if (installer == null)
+            {
+                installer = gameObject.AddComponent<InstallerLite>();
+                DontDestroyOnLoad(gameObject);
+            }
+        }
+        internal static void CancelInstall()
         {
             if (installer != null)
             {
                 var inst = installer as InstallerLite;
-#if TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] Installer.CancelInstall");
-#endif
                 inst.StopAllCoroutines();
                 Destroy(inst.gameObject);
                 installer = null;
             }
         }
-
-        public void OnDestroy()
-        {
-#if TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] Installer.OnDestroy");
-#endif
-        }
-
     }
 }
