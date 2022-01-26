@@ -86,8 +86,6 @@ namespace HarmonyMod
             if (self != null)
             {
                 Harmony.awarenessInstance = self;
-                Harmony2010::HarmonyLib.Harmony.awarenessInstance = self;
-                Harmony2009::HarmonyLib.Harmony.awarenessInstance = self;
                 HarmonyCHH2040::HarmonyLib.Harmony.awarenessInstance = self;
             }
             HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = true;
