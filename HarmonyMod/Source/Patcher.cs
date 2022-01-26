@@ -30,6 +30,7 @@ namespace HarmonyMod
     using System.Collections.Generic;
     using System.Reflection;
     using System.Diagnostics;
+    using System.Linq;
 
     internal class Patcher
     {
@@ -188,17 +189,13 @@ namespace HarmonyMod
                 // and I don't think it is in use anywhere.
                 new Version(1, 1, 0, 0),
                 new Version(1, 2, 0, 1),
-                new Version(2, 0, 0, 9),
-                new Version(2, 0, 1, 0),
-                new Version(2, 0, 4, 0),
-                new Version(2, 0, 400, 0),
             };
 
             /* Official support cut-off. Above this version, I will implement support.
              * Below this version, you need to implement the support and submit a
              * pull request; see below
              */
-            Version minSupportedVersion = new Version(2, 0, 1, 0);
+            Version minSupportedVersion = new Version(2, 0, 0, 0);
 
             List<HarmonyModSupportException.UnsupportedAssembly> unsupportedAssemblies = new List<HarmonyModSupportException.UnsupportedAssembly>();
 
@@ -214,7 +211,9 @@ namespace HarmonyMod
                 .Do((assembly) =>
                 {
                     var your = assembly.GetName();
-                    if (your.Name == "0Harmony")
+                    if (your.Name == "0Harmony" && 
+                        (your.GetPublicKeyToken() == null ||
+                        !your.GetPublicKeyToken().SequenceEqual(Assembly.GetExecutingAssembly().GetName().GetPublicKeyToken())))
                     {
                         if (Array.Exists(harmonyVersionSupport, (supported) => supported == your.Version))
                         {
@@ -232,27 +231,11 @@ namespace HarmonyMod
                         }
                         else
                         {
-                            /* If you are a mod developer and came here due to the exception below,
-                             * you're trying to use a version of 0Harmony which should be supported,
-                             * but is not currently.
-                             * Enter a feature request at https://github.com/drok/Harmony-CitiesSkylines/issues
-                             * For quicker service, include a pull request, implementing the appropriate
-                             * stub branch (you can use the branch stub-v2.0.1.0-to-current as example)
-                             * for your desired version
-                             *
-                             * Note if the version you're looking for is a new release from the HarmonyLib
-                             * developer, the HarmonyMod author will wait for some time for any bugs to shake
-                             * out of the new release before adding support to HarmonyMod. You can make this
-                             * happen quicker by reviewing pardeike's new release, report any bugs, and help
-                             * get them fixed. Mention that you've reviewed pardeike's release notes and
-                             * commits with your pull request. It'll speed up its implementation.
-                             *
-                             * Note that your pull request must include test cases for the new features
-                             * implemented in the new Harmony version, and the test cases should be particularly
-                             * thorough about the features you're interested in using.
-                             *
-                             * The goal is to add new feature support without compromising stability of the
-                             * existing ecosystem.
+                            /* Other mods are not allowed to supply their own Harmony 2 libs
+                             * because it would bypass the Patching ACL mechanics, as well as
+                             * the Awareness mechanic of patching v1 libs regardless of load order
+                             * 
+                             * TODO: Disable mods that try.
                              */
                             unsupportedAssemblies.Add(new HarmonyModSupportException.UnsupportedAssembly(assembly, false));
                         }
