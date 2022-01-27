@@ -72,13 +72,8 @@ namespace HarmonyMod
 
         protected IEnumerator<YieldInstruction> DoNothing(string reason)
         {
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - {this} Skipping {reason}");
-#endif
             yield break;
         }
-
-        // static public YieldInstruction temporaryError = new YieldInstruction();
 
         public virtual IEnumerator<YieldInstruction> FetchReleaseInfo(bool update, Loaded destination, DownloadManager downloadManager)
         {

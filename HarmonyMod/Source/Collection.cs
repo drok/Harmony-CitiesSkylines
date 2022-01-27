@@ -23,10 +23,13 @@ using ColossalFramework;
 using ColossalFramework.IO;
 using static Json.NETMF.JsonSerializer;
 using static Json.NETMF.JsonParser;
-#if TRACE
+using GitHub;
+#if TRACE || INSTALLER
 using static UnityEngine.Debug;
 #endif
+#if !INSTALLER
 using IAwareness;
+#endif
 
 namespace HarmonyMod
 {
@@ -50,9 +53,6 @@ namespace HarmonyMod
 
 			/* Release is unknown. Should refresh releases */
 			UnknownRelease,
-
-			/* Repo is unknown. Should fetch releases */
-			// UnknownRepo,
 		}
 
 		/// <summary>
@@ -69,31 +69,51 @@ namespace HarmonyMod
 		/// NeedAssets if the requested release is known, but it's missing the assets</returns>
 		public CheckoutResult PrepareToDownload(GitHubRelease item, bool update, out Hashtable release)
 		{
-#if HEAVY_TRACE
-			Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Collection Preparing to {(update ? "update" : "download")} {item} to {workingDir} Latest={item.Latest.value}");
-#endif
-
-			// SavedString savedLatest = new SavedString(item.myItemBranch + "[latest]", Settings.userGameState);
-			// latest = savedLatest.exists ? savedLatest.value : null;
-#if TRACE
-			Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Prepare item.Latest={item.Latest}");
-#endif
-
 			if (!update && item.Latest.value != string.Empty)
 			{
-				SavedString savedRelease = new SavedString(item.myReleaseBranch + "[release]", Settings.userGameState, string.Empty, true);
+				SavedString savedRelease = new SavedString(item.myReleaseBranch + "/release", Settings.userGameState, string.Empty, true);
 
 				var data = JsonDecode(savedRelease.value) as Hashtable;
-#if TRACE
-				Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Prepare savedRelease({savedRelease.name}).exists={savedRelease.exists}");
-#endif
+				/* FIXME:
+				 * The stored data needs to be checked for integrity, reliably
+				 */
 				if (savedRelease.exists)
 				{
-					release = data[_Item.RELEASE_DATA_ID_RELEASE] as Hashtable;
+					if ((long)data[_Item.RELEASE_DATA_ID_VERSION] != Versioning.StorageVersion)
+					{
+						savedRelease.Delete();
+						release = null;
+					}
+					else
+					{
+						release = data[_Item.RELEASE_DATA_ID_RELEASE] as Hashtable;
 
-					SavedString installed = new SavedString(item.myItemBranch + "[installed]", Settings.userGameState, string.Empty, true);
-					return (installed.value == item.myReleaseBranch + "/" + (release["tag_name"] as string)) ? CheckoutResult.OK :
-						CheckoutResult.NeedAssets;
+						SavedString installed = new SavedString(item.myItemBranch + "/installed", Settings.userGameState, string.Empty, true);
+
+						string availableRelease = item.branch + "/" + release[_GitHubRelease.REL_TAG_NAME];
+
+#if INSTALLER
+						/* forget what was installed, install something new.
+						 * This clears "stuck" when the installed marker is different
+						 * than what's on disk.
+						 * 
+						 * If the latest, full mod is on disk, but the user overwrites it with
+						 * the installer file manually, the installer should clear the flag
+						 * so the full mod can be re-downloaded.
+						 * 
+						 * There is no download loop because the installer downloads
+						 * the "Full Harmony Mod" package, while the API downloads
+						 * "Installer Only"
+						 * download loop when the tip of the branch is an installer.
+						 */
+						var result = CheckoutResult.NeedAssets;
+						installed.Delete();
+#else
+						var result = (installed.value == availableRelease) ? CheckoutResult.OK :
+							CheckoutResult.NeedAssets;
+#endif
+						return result;
+					}
 				}
 				else
 					release = null;
@@ -108,33 +128,23 @@ namespace HarmonyMod
 		{
 			{
 				bool complete = false;
-				SavedString repoUpdated = new SavedString(item.myItemBranch + "[updated]", Settings.userGameState, string.Empty, true);
+				SavedString repoUpdated = new SavedString(item.myItemBranch + "/updated", Settings.userGameState, string.Empty, true);
 				DateTimeOffset lastRepoUpdate = (repoUpdated.value != string.Empty) ?
 					DateTimeOffset.Parse(repoUpdated.value) : default(DateTimeOffset);
-
-#if TRACE
-				Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - repoUpdated={repoUpdated}");
-#endif
 				foreach (Hashtable release in releases)
 				{
-					var branch = release["target_commitish"] as string;
+					var branch = release[_GitHubRelease.REL_TARGET] as string;
 					var releaseName = item.myItemBranch + "/" + branch;
-#if TRACE
-					Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Collection Handling Release {release["name"] as string} @ {branch} ({release["published_at"] as string}) to {this}. Item last updated {item.updated}");
-#endif
-					if (item.Latest.exists && item.Latest.value == (release["html_url"] as string))
+					if (item.Latest.exists && item.Latest.value == (release[_GitHubRelease.REL_HTML_URL] as string))
 					{
 						complete = true;
 						break;
 					}
 
-					SavedString branchUpdated = new SavedString(releaseName + "[updated]", Settings.userGameState, string.Empty, true);
+					SavedString branchUpdated = new SavedString(releaseName + "/updated", Settings.userGameState, string.Empty, true);
 					DateTimeOffset lastBranchUpdate = (branchUpdated.value != string.Empty) ?
 						DateTimeOffset.Parse(branchUpdated.value) : default(DateTimeOffset);
-					var published_at = DateTimeOffset.Parse(release["published_at"] as string);
-#if TRACE
-					Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - branchUpdated={branchUpdated}");
-#endif
+					var published_at = DateTimeOffset.Parse(release[_GitHubRelease.REL_PUBLISHED_AT] as string);
 
 					if (!repoUpdated.exists || lastRepoUpdate < published_at)
 					{
@@ -144,50 +154,33 @@ namespace HarmonyMod
 
 					if (!branchUpdated.exists || lastBranchUpdate < published_at)
 					{
-
-						// updated.value = published_at.ToString(CultureInfo.InvariantCulture);
 						lastBranchUpdate = published_at;
 
 						/* Create empty commit with release details, and no assets */
-						Hashtable releaseContainer = new Hashtable();
-						// releaseContainer.Add("v", Versioning.ImplementationVersion);
-						releaseContainer.Add("release", release);
-						SavedString latestRelease = new SavedString(releaseName + "[release]", Settings.userGameState, string.Empty, true);
-						latestRelease.value = SerializeObject(releaseContainer);
-#if TRACE
-						Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - set release({latestRelease.name})");
-#endif
+						SavedString latestRelease = new SavedString(releaseName + "/release", Settings.userGameState, string.Empty, true);
+						var archivedRelease = new Hashtable()
+						{
+							{ _Item.RELEASE_DATA_ID_VERSION, Versioning.StorageVersion },
+							{ _Item.RELEASE_DATA_ID_RELEASE, _GitHubRelease.Filter(release, _GitHubRelease.StoredTags)},
+						};
+						latestRelease.value = SerializeObject(archivedRelease);
 
-						SavedString latestUpdate = new SavedString(releaseName + "[updated]", Settings.userGameState, string.Empty, true);
+						SavedString latestUpdate = new SavedString(releaseName + "/updated", Settings.userGameState, string.Empty, true);
 						latestUpdate.value = published_at.ToString(CultureInfo.InvariantCulture);
-#if TRACE
-						Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - set updated({latestUpdate.name})");
-#endif
-#if TRACE
-						Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Select {release["tag_name"] as string} @ {release["target_commitish"] as string} ({release["published_at"] as string}) as latest release for {this}. Item last updated {item.updated}");
-#endif
 					}
 					else
 					{
 						complete = true;
 						break;
 					}
-
 				}
-
-				/* Update the Etag */
-				// SavedString relLatest = new SavedString(item.myItemBranch + "[latest]", Settings.userGameState);
-				// relLatest.value = item.Latest.value;
 
 				return complete;
 			}
 		}
 	
-		public void OnSuccessfulDownload(Loaded mod, Item item, Hashtable release, DownloadState dl)
+		public bool OnSuccessfulDownload(Loaded mod, Item item, Hashtable release, DownloadState dl)
 		{
-			SavedString installed = new SavedString(item.myItemBranch + "[installed]", Settings.userGameState, string.Empty, true);
-			installed.value = item.myReleaseBranch + "/" + (release["tag_name"] as string);
-
 			var modHome = mod.orig.modPath;
 			bool needsBackup = Directory.Exists(modHome);
 			bool failed = false;
@@ -195,13 +188,31 @@ namespace HarmonyMod
 			if (needsBackup)
 			{
 				try { Directory.Move(modHome, bakdir); }
-				catch (Exception ex) { Mod.SelfReport(SelfProblemType.FailedToInitialize, ex); failed = true; }
+				catch (Exception ex) {
+#if INSTALLER
+					LogError($"[{Versioning.FULL_PACKAGE_NAME}] Failed to backup {modHome} to {bakdir}: {ex.Message}");
+#else
+					Mod.SelfReport(SelfProblemType.FailedToInitialize, ex);
+#endif
+					failed = true;
+				}
 			}
 
 			if (!failed)
 			{
-				try { Directory.Move(dl.destDir, modHome); }
-				catch (Exception ex) { Mod.SelfReport(SelfProblemType.FailedToInitialize, ex); failed = true; }
+				try {
+					Directory.Move(dl.destDir, modHome);
+					SavedString installed = new SavedString(item.myItemBranch + "/installed", Settings.userGameState, string.Empty, true);
+					installed.value = item.branch + "/" + (release[_GitHubRelease.REL_TAG_NAME] as string);
+				}
+				catch (Exception ex) {
+#if INSTALLER
+					LogError($"[{Versioning.FULL_PACKAGE_NAME}] Failed to move downloaded directory '{dl.destDir}' to destination '{modHome}': {ex.Message}");
+#else
+					Mod.SelfReport(SelfProblemType.FailedToInitialize, ex);
+#endif
+					failed = true;
+				}
 
 				if (needsBackup)
 				{
@@ -216,17 +227,23 @@ namespace HarmonyMod
 							Directory.Delete(bakdir, true);
 						}
 					}
-					catch (Exception ex) { Mod.SelfReport(SelfProblemType.FailedToInitialize, ex); }
+					catch (Exception ex) {
+#if INSTALLER
+						LogError($"[{Versioning.FULL_PACKAGE_NAME}] Failed to cleanup after {(failed ? "failed" : "successful")} install: {ex.Message}");
+#else
+						Mod.SelfReport(SelfProblemType.FailedToInitialize, ex);
+#endif
+					}
 				}
 			}
 
+			return !failed;
 		}
 
 #if DEBUG
 		public void Cleanup()
         {
 			LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Collection Cleanup() not implemented");
-			// throw new NotImplementedException();
 		}
 #endif
 	}

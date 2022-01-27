@@ -1,4 +1,21 @@
-﻿using System.Collections.Generic;
+﻿/*
+ * Harmony for Cities Skylines
+ *  Copyright (C) 2021 Radu Hociung <radu.csmods@ohmi.org>
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the modified GNU General Public License as
+ *  published in the root directory of the source distribution.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  modified GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using ICSharpCode.SharpZipLib.Zip;
@@ -19,9 +36,6 @@ namespace HarmonyMod
 
         public IEnumerable<string> UnzipTo(string destDir)
         {
-#if TRACE
-            Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Unzipping {zipName} to {destDir}");
-#endif
             bool zippedDirectory = false;
             string zippedDirectoryName = null;
             var fileList = new List<string>();
@@ -37,9 +51,6 @@ namespace HarmonyMod
                         */
                     while (inputStream.GetNextEntry() is ZipEntry zipEntry)
                     {
-#if TRACE
-                        Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Found in zip: {zipEntry.Name}");
-#endif
                         if (zipEntry.IsDirectory && !zippedDirectory)
                         {
                             zippedDirectory = true;
@@ -85,21 +96,12 @@ namespace HarmonyMod
                         {
                             dest = Path.Combine(destDir, zipEntry.Name);
                         }
-#if TRACE
-                        Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Calculated Path: {dest} (zippedDirectory={zippedDirectory} zippedDirectoryName={zippedDirectoryName}");
-#endif
                         if (zipEntry.IsDirectory)
                         {
-#if TRACE
-                            Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Should create Dir {dest}");
-#endif
                             Directory.CreateDirectory(dest);
                         }
                         else
                         {
-#if TRACE
-                            Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Should unzip {zipName} to {destDir} => {dest}");
-#endif
                             fileList.Add(dest);
                             using (FileStream streamWriter = File.Create(dest))
                             {

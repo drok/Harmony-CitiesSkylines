@@ -50,6 +50,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VersionedAssembly-v1", "Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VersionedAssembly-v2", "Tests.Mod\VersionedAssembly-v2\VersionedAssembly-v2.csproj", "{D44153F7-68A7-4B27-81E3-6B7AAC8C8B52}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HarmonyInstaller", "HarmonyMod\HarmonyInstaller.csproj", "{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Beta|Any CPU = Beta|Any CPU
@@ -298,6 +300,20 @@ Global
 		{D44153F7-68A7-4B27-81E3-6B7AAC8C8B52}.Test API 1.0.5|Any CPU.ActiveCfg = Release|Any CPU
 		{D44153F7-68A7-4B27-81E3-6B7AAC8C8B52}.Test API 1.0.6|Any CPU.ActiveCfg = Release|Any CPU
 		{D44153F7-68A7-4B27-81E3-6B7AAC8C8B52}.Test API 2.0.0|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Beta|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Developer|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Developer-Updater|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.ReleaseTrace|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.ReleaseTrace|Any CPU.Build.0 = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Test API 0.9.0|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Test API 1.0.3|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Test API 1.0.4|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Test API 1.0.5|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Test API 1.0.6|Any CPU.ActiveCfg = Release|Any CPU
+		{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}.Test API 2.0.0|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

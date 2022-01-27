@@ -28,6 +28,9 @@ using ColossalFramework;
 using ColossalFramework.Plugins;
 using ColossalFramework.IO;
 using Priority_Queue;
+#if INSTALLER
+using HarmonyInstaller;
+#endif
 
 namespace HarmonyMod
 {
@@ -69,15 +72,10 @@ namespace HarmonyMod
     }
     internal class DownloadManager : MonoBehaviour
     {
-        // const string RATELIMIT_FILE = "GRateLimit";
+#if SIMULATE_NETWORK_FAILURES
+        static int testFailureCount = 3;
+#endif
 
-        // const string HarmonyGithubDistributionURL = "drok/Harmony-CitiesSkylines";
-        // const string HarmonyGithubDistributionURL = "drok/reltest";
-        // const string HarmonyInstallDir = "000-HarmonyMod";
-        // static string requestingMod = string.Empty;
-
-        //MethodInfo pluginManagerFSHanderInstaller;
-        MethodInfo loadPluginAtPath;
 #if BUGFIXED_RESILIENT_MOD_UNLOAD
         MethodInfo removePluginAtPath;
 #endif
@@ -102,7 +100,7 @@ namespace HarmonyMod
             public bool update;
             public override string ToString()
             {
-                return "Downloading " + item.ToString() + " to " + (destination == null ? "mod manager" : destination.ToString());
+                return (update ? "Updating " : "Downloading ") + item.ToString() + " to " + (destination == null ? "mod manager" : destination.ToString());
             }
         }
 
@@ -110,15 +108,8 @@ namespace HarmonyMod
         SimplePriorityQueue<Work> workQueue;
         HashSet<Item> allDownloads;
 
-
-        // Collection downloadTempLocation = default(Collection);
-        // string tempRepoDir = default(string);
-        // string destDir = default(string);
-
         public void Awake()
         {
-            loadPluginAtPath = typeof(PluginManager)
-                .GetMethod("LoadPluginAtPath", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
 
             workQueueLock = new object();
             workQueue = new SimplePriorityQueue<Work>();
@@ -163,7 +154,6 @@ namespace HarmonyMod
                         parts[3]), /* Repo */
                 branchDir);
         }
-
         static DownloadManager()
         {
             var unitySdk =
@@ -174,9 +164,6 @@ namespace HarmonyMod
                             "lib"),
                         "mono"),
                     "unity");
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] Installer.Awake() will load I18N form {unitySdk}");
-#endif
             Assembly.LoadFrom(Path.Combine(unitySdk, "I18N.dll"));
             Assembly.LoadFrom(Path.Combine(unitySdk, "I18N.West.dll"));
         }
@@ -189,7 +176,12 @@ namespace HarmonyMod
             }
             catch (Exception ex)
             {
+#if INSTALLER
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] Download Manager failed: {ex.Message}\n{ex.StackTrace}");
+#else
                 Mod.SelfReport(IAwareness.SelfProblemType.FailedToInitialize, ex);
+#endif
+
                 return false;
             }
         }
@@ -216,8 +208,6 @@ namespace HarmonyMod
 
                 if (hasWork)
                 {
-                    bool error = false;
-
                     work.item.installationState = Item.InstallationState.FetchingReleaseInfo;
 
                     var actions = work.item.FetchReleaseInfo(work.update, work.destination, this);
@@ -227,47 +217,37 @@ namespace HarmonyMod
                         {
                             LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN: {work} failed: {dlerror}");
                             work.item.OnDownloadFailed(work.destination, work.update, this, dlerror);
-                            error = true;
                             break;
                         }
                         else if (actions.Current is TemporaryError delay)
                         {
                             lock (workQueueLock)
                             {
-                                // yield return new WaitForSeconds(delay);
                                 var reWork = RetryWait.GetRetryWork(delay.waitTill, work, actions);
-#if TRACE
-                                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Re-queuing {reWork} due to {delay}");
-#endif
-                                // reWork.item.installationState = Item.InstallationState.Pending;
                                 workQueue.Enqueue(reWork, (float)(reWork.item as RetryWait).delay);
                                 break;
                             }
                         }
-#if HEAVY_TRACE
-                        Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - download.Current={(actions.Current != null ? actions.Current.GetType() : "null")} error={error}");
-#endif
                         yield return actions.Current;
                     }
-#if HEAVY_TRACE
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Downloader finished {work}");
-#endif
                     /* Fixme: Why is Cleanup() needed? test those scenarios */
                     Cleanup();
                     continue;
                 }
+#if INSTALLER
+                HarmonyInstaller.Mod.Deactivate();
+#endif
                 break;
             }
-
-#if DEBUG
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Downloader finished all work");
-#endif
         }
 
         void Cleanup()
         {
+            /* This is called when a temporary, perm error happens, or when the download succeeds
+             * it means cleanup the download area
+             */
 #if DEBUG
-            Mod.mainModInstance.repo.Cleanup();
+            Mod.repo.Cleanup();
             Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Cleanup download repo");
 #endif
         }
@@ -281,13 +261,10 @@ namespace HarmonyMod
         public IEnumerator<YieldInstruction> HttpPost(string url, string accept, Dictionary<string, string> formFields, object destination, string etag, object context, Func<UnityWebRequest, object, object, IEnumerable<YieldInstruction>> downloadHandler)
         {
             var items = formFields.Values.Aggregate(string.Empty, (a, v) => a + "," + v);
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - POST values {items}");
-#endif
             var download = HttpGetPost(url, accept, formFields, destination, etag, context, downloadHandler);
             while (download.MoveNext()) yield return download.Current;
         }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -301,99 +278,88 @@ namespace HarmonyMod
         IEnumerator<YieldInstruction> HttpGetPost(string url, string accept, Dictionary<string, string> formFields, object destination, string etag, object context, Func<UnityWebRequest, object, object, IEnumerable<YieldInstruction>> downloadHandler)
         {
 
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] Fetch {(formFields == null ? "GET" : "POST")} {url} {(formFields!=null ? formFields.Count : 0)} formFields");
-#endif
-            using (UnityWebRequest request = formFields == null ? UnityWebRequest.Get(url) : UnityWebRequest.Post(url, formFields))
+            bool done = false;
+            do
             {
-                var user_agent = Uri.EscapeUriString(Versioning.FULL_PACKAGE_NAME + " ") +
-                    "&#40" +
-                    Uri.EscapeUriString(Versioning.ISSUES_URL) +
-                    "&#41";
-                // Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Setting User-Agent: {user_agent}");
-                request.SetRequestHeader("user-agent", user_agent);
-//                 Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] User-Agent OK");
-                //                var accept = isJson ? "application/vnd.github.v3+json" : "application/octet-stream";
-                // Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Setting Accept: {accept}");
-                request.SetRequestHeader("Accept", accept);
-                // Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] Accept OK");
-                // Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] sending web req {request.url} from\n{new System.Diagnostics.StackTrace(true)}");
-
-                request.timeout = _DownloadManager.WEBREQUEST_TIMEOUT;
-                // request.redirectLimit = 0;
-                // request.downloadHandler = new TestDownloader();
-
-                if (!string.IsNullOrEmpty(etag))
-                    request.SetRequestHeader("If-None-Match", etag);
-
-                yield return request.Send();
-
-                if (request.isError)
+                using (UnityWebRequest request = formFields == null ? UnityWebRequest.Get(url) : UnityWebRequest.Post(url, formFields))
                 {
-                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - Failed to send request {url}");
-                    yield return new TemporaryError($"Error Requesting {request.url} - {request.error}", new TimeSpan(0, 0, _DownloadManager.NETWORK_UNAVAILABLE_RETRY_DELAY));
-                }
-                else
-                {
-#if HEAVY_TRACE
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}] WWW got code {request.responseCode} for {request.url} @ {DateTime.Now}");
-#endif
+                    var user_agent = Uri.EscapeUriString(Versioning.FULL_PACKAGE_NAME + " ") +
+                        "&#40" +
+                        Uri.EscapeUriString(Versioning.ISSUES_URL) +
+                        "&#41";
+                    request.SetRequestHeader("user-agent", user_agent);
+                    request.SetRequestHeader("Accept", accept);
+                    request.timeout = _DownloadManager.WEBREQUEST_TIMEOUT;
 
-                    switch (request.responseCode)
+                    if (!string.IsNullOrEmpty(etag))
+                        request.SetRequestHeader("If-None-Match", etag);
+
+                    yield return request.Send();
+
+#if SIMULATE_NETWORK_FAILURES
+                    if (request.isError || testFailureCount != 0)
                     {
-                        case 200:
-                            // yield return (YieldInstruction)DownloadHandler(request, request.GetResponseHeader("Etag"));
-                            foreach (var action in downloadHandler(request, destination, context))
-                            {
-                                yield return action;
-                            }
-                            // {
-                            //     InstallFailed();
-                            // }
-                            break;
-                        case 304:
-#if HEAVY_TRACE
-                            Log($"[{Versioning.FULL_PACKAGE_NAME}] There is no new release at {url}");
+                        if (testFailureCount != 0)
+                            testFailureCount--;
+                        LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - Failed to send request {url}");
+                        yield return new TemporaryError($"Error Requesting {request.url} - {request.error}", new TimeSpan(0, 0, _DownloadManager.NETWORK_UNAVAILABLE_RETRY_DELAY));
+                    }
+#else
+                    if (request.isError)
+                    {
+                        LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - Failed to send request {url}");
+                        yield return new TemporaryError($"Error Requesting {request.url} - {request.error}", new TimeSpan(0, 0, _DownloadManager.NETWORK_UNAVAILABLE_RETRY_DELAY));
+                    }
 #endif
-                            yield return DownloadManager.notModified;
-                            break;
-                        case 302:
-#if HEAVY_TRACE
-                            Log($"[{Versioning.FULL_PACKAGE_NAME}] Received redirect to {request.GetResponseHeader("Location")}");
-#endif
-                            yield return new Redirect(request.GetResponseHeader("Location"));
-                            break;
-                        case 403: /* Rate Limit .. fixme calculate exact wait time */
-                            int rateLimitReset;
-                            if (request.GetResponseHeader("X-RateLimit-Reset") is string resetStr)
-                            {
-                                rateLimitReset = int.Parse(resetStr);
-                                yield return new TemporaryError($"RateLimit for {request.url}", rateLimitReset);
-                            }
-                            else
-                            {
-                                yield return downloadError;
-                            }
-                            break;
-                        case 502: /* bad gateway */
-                        case 500: /* Internal server error */
-                        case 503: /* Service unavailable */
-                        case 504: /* gateway timeout */
-                            int delay = 30;
-#if HEAVY_TRACE
-                            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - will try again in {delay}");
-#endif
-                            yield return new TemporaryError($"HTTP response {request.responseCode} for {request.url})", new TimeSpan(0, 0, _DownloadManager.SERVICE_UNAVAILABLE_RETRY_DELAY));
-                            break;
+                    else
+                    {
+                        switch (request.responseCode)
+                        {
+                            case 200:
+                                foreach (var action in downloadHandler(request, destination, context))
+                                {
+                                    yield return action;
+                                }
+                                done = true;
+                                break;
+                            case 304:
+                                yield return DownloadManager.notModified;
+                                done = true;
+                                break;
+                            case 302:
+                                yield return new Redirect(request.GetResponseHeader("Location"));
+                                done = true;
+                                break;
+                            case 403: /* Rate Limit .. fixme calculate exact wait time */
+                                int rateLimitReset;
+                                if (request.GetResponseHeader("X-RateLimit-Reset") is string resetStr)
+                                {
+                                    rateLimitReset = int.Parse(resetStr);
+                                    yield return new TemporaryError($"RateLimit for {request.url}", rateLimitReset);
+                                }
+                                else
+                                {
+                                    yield return downloadError;
+                                    done = true;
+                                }
+                                break;
+                            case 502: /* bad gateway */
+                            case 500: /* Internal server error */
+                            case 503: /* Service unavailable */
+                            case 504: /* gateway timeout */
+                                yield return new TemporaryError($"HTTP response {request.responseCode} for {request.url})", new TimeSpan(0, 0, _DownloadManager.SERVICE_UNAVAILABLE_RETRY_DELAY));
+                                break;
 
-                        case 404: /* Positively does not exist */
-                        default:
-                            LogError($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Other Download Error HTTP.responseCode={request.responseCode}");
-                            yield return notFound;
-                            break;
+                            case 404: /* Positively does not exist */
+                            default:
+                                LogError($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Other Download Error HTTP.responseCode={request.responseCode}");
+                                yield return notFound;
+                                done = true;
+                                break;
+                        }
                     }
                 }
-            }
+            } while (!done);
         }
 
         public IEnumerator<YieldInstruction> HttpHead(string url)
@@ -402,9 +368,6 @@ namespace HarmonyMod
             bool done = false;
             do
             {
-#if HEAVY_TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Fetch HEAD {url}");
-#endif
                 using (UnityWebRequest request = UnityWebRequest.Head(url))
                 {
                     var user_agent = Uri.EscapeUriString(Versioning.FULL_PACKAGE_NAME + " ") +
@@ -417,19 +380,12 @@ namespace HarmonyMod
 
                     yield return request.Send();
 
-#if HEAVY_TRACE
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}] WWW got code {request.responseCode} for {request.url}");
-#endif
-
                     switch (request.responseCode)
                     {
                         case 200:
                             done = true;
                             break;
                         case 302:
-#if HEAVY_TRACE
-                            Log($"[{Versioning.FULL_PACKAGE_NAME}] Received redirect to {request.GetResponseHeader("Location")}");
-#endif
                             done = true;
                             yield return new Redirect(request.GetResponseHeader("Location"));
                             break;
@@ -438,9 +394,8 @@ namespace HarmonyMod
                         case 500: /* Internal server error */
                         case 503: /* Service unavailable */
                         case 504: /* gateway timeout */
-                            int delay = 5;
-                            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - will try again in {delay}");
-                            yield return new WaitForSeconds(delay);
+                            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - will try again in {_DownloadManager.SERVICE_UNAVAILABLE_RETRY_DELAY}");
+                            yield return new TemporaryError($"HTTP response {request.responseCode} for {request.url})", new TimeSpan(0, 0, _DownloadManager.SERVICE_UNAVAILABLE_RETRY_DELAY));
                             break;
 
                         case 404: /* Positively does not exist */
@@ -458,9 +413,6 @@ namespace HarmonyMod
 
         public void Enqueue(Loaded destination, Item item, bool update)
         {
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Installer enqueue {item} from \n{ new System.Diagnostics.StackTrace(true)}");
-#endif
             lock (workQueueLock)
             {
                 workQueue.Enqueue(new Work(){ item = item, destination = destination, update = update, }, 0f);
@@ -476,15 +428,15 @@ namespace HarmonyMod
                 (false),
                 "Item Install should only be requested for unknown items");
 
-            var installer = Mod.mainModInstance.gameObject.GetComponent<DownloadManager>();
+            var installer = Mod.gameObject.GetComponent<DownloadManager>();
 
             if (installer == null)
             {
-                Mod.mainModInstance.gameObject.SetActive(false);
-                installer = Mod.mainModInstance.gameObject.AddComponent<DownloadManager>();
+                Mod.gameObject.SetActive(false);
+                installer = Mod.gameObject.AddComponent<DownloadManager>();
 
                 installer.enabled = false;
-                Mod.mainModInstance.gameObject.SetActive(true);
+                Mod.gameObject.SetActive(true);
                 installer.Enqueue(callbackModInfo, item, update);
                 installer.enabled = true;
             } else
@@ -495,27 +447,18 @@ namespace HarmonyMod
 
         static public bool IsDownloading()
         {
-            var installer = Mod.mainModInstance.gameObject.GetComponent<DownloadManager>();
+            var installer = Mod.gameObject.GetComponent<DownloadManager>();
             return installer != null;
         }
 
         static public IEnumerable<Item> GetQueuedItems()
         {
-            var installer = Mod.mainModInstance.gameObject.GetComponent<DownloadManager>();
+            var installer = Mod.gameObject.GetComponent<DownloadManager>();
             if (installer != null)
             {
                 return installer.allDownloads;
             }
             return Enumerable.Empty<Item>();
         }
-
-#if HEAVY_TRACE
-        public void OnDestroy()
-        {
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] Installer.OnDestroy");
-        }
-#endif
-
-
     }
 }

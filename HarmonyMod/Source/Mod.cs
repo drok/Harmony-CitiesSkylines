@@ -48,9 +48,6 @@ namespace HarmonyMod
 #elif MODMANAGER
         internal const string RECOMMENDED_LOCAL_HELPER_DIRNAME = "000-" + Versioning.PACKAGE_NAME + "-ModManager";
 #endif
-#if TRACE
-        internal static int instancenum = 0;
-#endif
         internal const string SettingsFile = Versioning.PACKAGE_NAME;
 
         #region IUserMod Name and Description
@@ -141,7 +138,7 @@ namespace HarmonyMod
         internal bool isFirst => handover.isFirst;
         internal bool IsFreshInstall => handover.IsFreshInstall();
 
-        internal PluginInfo selfPlugin => handover.self;
+        internal PluginInfo selfPlugin => handover?.self;
 #if DEVELOPER
         internal bool isLocal => handover.isLocal;
         internal bool isHelperLocal => handover.isHelperLocal;
@@ -150,9 +147,11 @@ namespace HarmonyMod
 
         internal Report report;
 
-        internal GameObject gameObject;
+        GameObject m_gameObject;
+        internal static GameObject gameObject => mainModInstance.m_gameObject;
 
-        internal Collection repo;
+        Collection m_repo;
+        internal static Collection repo => mainModInstance.m_repo;
 
         static bool needAutoEnableCall = false;
 #if DEVELOPER_UPDATER
@@ -183,9 +182,6 @@ namespace HarmonyMod
                         var stackTrace = new System.Diagnostics.StackTrace(0, false);
                         var caller = stackTrace.GetFrame(stackTrace.FrameCount - 1).GetMethod();
                         var callerName = caller.DeclaringType.FullName + "." + caller.Name;
-#if TRACE
-                        UnityEngine.Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod..cctor() thread={Thread.CurrentThread.ManagedThreadId} plugin={mainMod != null} initiated by {callerName}\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
-#endif
                         if (callerName == "MenuPanel.Start")
                         {
                             /* Need to call EnableOnce after the constructor returns */
@@ -224,19 +220,8 @@ namespace HarmonyMod
             {
                 LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN - Mod..cctor: ({Report.ExMessage(ex, true)})");
             }
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Mod..cctor Debugger: {System.Diagnostics.Debugger.IsAttached} DONE");
-#endif
         }
-        // Install Harmony as soon as possible to avoid problems with mods not following the guidelines
 
-#if TRACE
-        public Mod()
-        {
-            ++instancenum;
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - In Mod..ctor() thread={Thread.CurrentThread.ManagedThreadId} plugin={mainMod != null}\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
-        }
-#endif
 
 #region UserMod invoked handlers
         public void OnEnabled()
@@ -251,10 +236,6 @@ namespace HarmonyMod
                     handover = new Handover(this);
                 }
 
-#if TRACE
-                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnEnabled() I am={handover.self.name} #{instancenum}");
-#endif
-
                 if (handover.BootStrapMainMod())
                 {
                     if (handover.isHelper)
@@ -262,16 +243,9 @@ namespace HarmonyMod
                         helperMod = handover.helperMod;
                     }
                     var mainModName = $"{(handover.mainMod().userModInstance as IUserMod).Name} {handover.mainModVersion}";
-#if TRACE
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Helper, main Mod '{mainModName}' was bootstrapped.");
-#endif
                 }
                 else
                 {
-#if TRACE
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I am the active Harmony.");
-#endif
-
                     OnActive();
 
 #if DEVELOPER
@@ -330,10 +304,6 @@ namespace HarmonyMod
 
                 if (handover != null)
                 {
-#if TRACE
-                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() I am={handover.self.name} #{instancenum} " +
-                        $"{(pluginManagerShuttingDown ? "Exiting Application" : "Disabled by user action")}");
-#endif
                     if (enabled)
                     {
                         if (!pluginManagerShuttingDown) /* If shutdown is user requested, do it. */
@@ -366,13 +336,6 @@ namespace HarmonyMod
                     }
                     enabled = false;
                 }
-#if HEAVY_TRACE
-                else
-                {
-                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] Mod.OnDisabled() #{instancenum}");
-                }
-#endif
-
             }
             catch (Exception ex)
             {
@@ -385,9 +348,6 @@ namespace HarmonyMod
         [UsedImplicitly]
         void ILoadingExtension.OnCreated(ILoading loading)
         {
-#if TRACE
-            UnityEngine.Debug.LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Mod.OnCreated(mode={loading.currentMode}, complete={loading.loadingComplete}");
-#endif
             if (loading.loadingComplete == false)
             {
 #if BETA || DEVELOPER
@@ -403,10 +363,6 @@ namespace HarmonyMod
         [UsedImplicitly]
         void ILoadingExtension.OnReleased()
         {
-#if TRACE
-            /* can't report here, already disabled */
-            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: LoadingExtension.OnReleased()");
-#endif
 #if BETA || DEVELOPER
             report?.OutputReport(this, false, "Mods Unloaded");
 #endif
@@ -509,8 +465,8 @@ namespace HarmonyMod
         {
             if (!gameObject)
             {
-                repo = new Collection();
-                gameObject = new GameObject("HarmonyUpdates");
+                m_repo = new Collection();
+                m_gameObject = new GameObject("HarmonyUpdates");
                 GameObject.DontDestroyOnLoad(gameObject);
             }
 
@@ -547,11 +503,6 @@ namespace HarmonyMod
 
                 if (handover != null)
                 {
-
-#if TRACE
-                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.OnMainModChanged() enabled={enabled} I am={handover.self.name}");
-#endif
-
                     /* TODO: Implement */
                     if (handover.BootStrapMainMod(enabled))
                     {
@@ -562,9 +513,6 @@ namespace HarmonyMod
                             mainMod = handover.mainMod();
                             mainModInstance = mainMod.userModInstance as Mod;
 
-#if TRACE
-                            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Helper role to Mod '{mainModName}'");
-#endif
                         } else
                         {
                             if (!enabled)
@@ -573,9 +521,6 @@ namespace HarmonyMod
                                 mainModInstance = null;
                                 mainMod = null;
                             }
-#if TRACE
-                            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: I switched to Standby role to Mod '{mainModName}'");
-#endif
                         }
 
 
@@ -602,12 +547,6 @@ namespace HarmonyMod
                     IsTrue(main == handover.mainMod(),
                         "Notification of another Harmony mod being main should be accurate");
                 }
-#if HEAVY_TRACE
-                else
-                {
-                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.OnMainModChanged() enabled={enabled}");
-                }
-#endif
             }
             catch (Exception ex)
             {
@@ -619,9 +558,6 @@ namespace HarmonyMod
         //public void PutModReports(Dictionary<PluginInfo, IAwareness0::IAwareness.ModReportBase> reports)
         void IAmAware.PutModReports(Dictionary<PluginInfo, ModReportBase> reports)
         {
-#if TRACE
-            LogError($"[{Versioning.FULL_PACKAGE_NAME}] In Mod.PutModReports() enabled={enabled} I am={handover.self.name}");
-#endif
             try
             {
 
@@ -684,12 +620,6 @@ namespace HarmonyMod
          */
         void IAmAware.OnHarmonyAccessBeforeAwareness(bool needHarmon1StateTransfer)
         {
-#if TRACE
-            var origin = Report.FindCallOrigin(new System.Diagnostics.StackTrace(1, false));
-            string origin_string = (origin != null && origin.isEnabledNoOverride && origin.userModInstance != null) ? $" on behalf of '{(origin.userModInstance as IUserMod).Name}'" : string.Empty;
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyAccessBeforeAwareness({needHarmon1StateTransfer}){origin_string}");
-#endif
-
             if (!Harmony.Harmony1Patched)
             {
                 Harmony.Harmony1Patched = true;
@@ -699,24 +629,16 @@ namespace HarmonyMod
 
         bool IAmAware.DoOnHarmonyReady(List<ClientCallback> callbacks)
         {
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady() mainModInstance={mainModInstance?.Name ?? "none"}");
-#endif
-            if (mainModInstance != selfPlugin.userModInstance)
+            if (mainModInstance == null) {
+                return false;
+            } else if (mainModInstance != selfPlugin?.userModInstance)
             {
-#if HEAVY_TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady() mainModInstance={mainModInstance?.Name ?? "none"}");
-#endif
-                return mainModInstance != null && 
-                    (mainModInstance as IAmAware).DoOnHarmonyReady(callbacks);
+                return (mainModInstance as IAmAware).DoOnHarmonyReady(callbacks);
             }
 
             callbacks.Do((c) =>
             {
                 var caller = c.callStack.GetFrame(0).GetMethod();
-#if HEAVY_TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] OnHarmonyReady caller = {caller.FullDescription()}");
-#endif
                 if (!Harmony.harmonyUsers.TryGetValue(caller.DeclaringType.Assembly.FullName, out var userStatus))
                 {
                     Harmony.harmonyUsers[caller.DeclaringType.Assembly.FullName] = new Harmony.HarmonyUser() { instancesCreated = 0, checkBeforeUse = true, };
@@ -765,9 +687,6 @@ namespace HarmonyMod
             {
                 throw new HarmonyModACLException($"(Un)Patching {Versioning.PACKAGE_NAME} is prohibited");
             }
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows because caller is self or patch is not mine.");
-#endif
         }
 
         bool IAmAware.PatchACL(MethodBase original, MethodBase caller, object patchMethod, Enum patchType)
@@ -832,21 +751,6 @@ namespace HarmonyMod
             } else
             {
                 ProhibitPatchingHarmony(original, caller);
-#if HEAVY_TRACE
-            string MethodInfoFullName(MethodInfo m)
-            {
-                if (m == null) return "m-is-null";
-                return m.DeclaringType?.FullName + "." + m.Name;
-            }
-
-            var patchMethodName =
-                (patchMethod is null) ? "*null*" :
-                (patchMethod is HarmonyMethod) ? MethodInfoFullName((patchMethod as HarmonyMethod).method) :
-                (patchMethod is HarmonyCHH2040::HarmonyLib.HarmonyMethod) ? MethodInfoFullName((patchMethod as HarmonyCHH2040::HarmonyLib.HarmonyMethod).method) :
-                patchMethod.GetType().FullName;
-
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] PatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to patch {original.DeclaringType.FullName}.{original.Name} with {patchMethodName} as {patchType}");
-#endif
             }
 
             return true;
@@ -856,14 +760,10 @@ namespace HarmonyMod
         {
             ProhibitRemovingHarmony(original, caller, patchMethod);
 
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] UnpatchACL allows {caller.DeclaringType.FullName}.{caller.Name} to unpatch {original.DeclaringType.FullName}.{original.Name}");
-#endif
-
             return true;
         }
 
-#endregion
+        #endregion
 
 
 #if DEBUG
@@ -958,10 +858,6 @@ namespace HarmonyMod
                                 fileName: Settings.userGameState,
                                 def: false,
                                 autoUpdate: true);
-
-#if TRACE
-                            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - checking enabled flag at mainMod.modPath={mainMod.modPath} {mainMod.name + mainMod.modPath.GetHashCode().ToString() + ".enabled"}");
-#endif
 
                             if (!oneShotAutoEnable && !oneShotAutoEnable.exists)
                             {

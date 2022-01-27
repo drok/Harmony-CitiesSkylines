@@ -1,4 +1,21 @@
-﻿using System;
+﻿/*
+ * Harmony for Cities Skylines
+ *  Copyright (C) 2021 Radu Hociung <radu.csmods@ohmi.org>
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the modified GNU General Public License as
+ *  published in the root directory of the source distribution.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  modified GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
@@ -23,7 +40,6 @@ namespace HarmonyMod
             m_resume = next;
         }
 
-        public override string authorID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public override string authorName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public override string typeID => throw new NotImplementedException();
@@ -50,11 +66,8 @@ namespace HarmonyMod
 
             while (m_resume.MoveNext())
             {
-                Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - RetryWait yields {m_resume.Current.GetType()}");
                 yield return m_resume.Current;
             }
-            Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - RetryWait finished");
-            //            release.Enqueue(m_work.destination, m_work.item, m_work.update);
         }
 
         public override void Install(Loaded requiredBy, bool update)
@@ -64,7 +77,6 @@ namespace HarmonyMod
 
         public override string ToString()
         {
-            // var delay = m_at - (Int32)DateTimeOffset.UtcNow.ToUniversalTime().Subtract(new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero)).TotalSeconds;
             var delay = m_at - DateTimeOffset.UtcNow;
 
             return "retry " + m_work.item + " in " + delay + "s";
@@ -75,7 +87,6 @@ namespace HarmonyMod
             if (work.item is RetryWait again)
             {
                 again.m_at = at;
-                // again.m_resume = next;
                 return work;
             }
             else

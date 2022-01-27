@@ -1,4 +1,21 @@
-﻿using System;
+﻿/*
+ * Harmony for Cities Skylines
+ *  Copyright (C) 2021 Radu Hociung <radu.csmods@ohmi.org>
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the modified GNU General Public License as
+ *  published in the root directory of the source distribution.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  modified GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,17 +28,18 @@ using static Json.NETMF.JsonSerializer;
 using static Json.NETMF.JsonParser;
 using UnityEngine.Networking;
 using ColossalFramework;
+using GitHub;
+#if INSTALLER
+using HarmonyInstaller;
+#endif
 
 
 namespace HarmonyMod
 {
     internal class GitHubRelease : Item
     {
-// #if DEBUG
-//         const string DEFAULT_HOSTNAME = "pro41.ohmisim.ohmi.org";
-// #else
         const string DEFAULT_HOSTNAME = "github.com";
-//#endif
+
         readonly string author;
         readonly string repoName;
         readonly string branchName;
@@ -29,7 +47,6 @@ namespace HarmonyMod
         const string ACCEPT_RELEASE_DATA = "application/vnd.github.v3+json";
         const string ACCEPT_BINARIES = "application/octet-stream";
         #region Item Information
-        public override string authorID { get; set; }
         public override string authorName { get { return author; } set { } }
         public override string typeID { get { return _Item.PROVENANCE_TYPEID_GITHUB; } }
         public override string repo { get { return repoName; } }
@@ -72,7 +89,7 @@ namespace HarmonyMod
                 if (uri.Segments.Length == 4)
                     branchName = UriSegment(uri, 3);
 
-                m_Latest = new SavedString(myReleaseBranch + "[latest]", Settings.userGameState);
+                m_Latest = new SavedString(myReleaseBranch + "/latest", Settings.userGameState);
             }
         }
         public GitHubRelease(string dirName)
@@ -83,17 +100,19 @@ namespace HarmonyMod
 
         private IEnumerable<YieldInstruction> HandleDownload(UnityWebRequest request, object destination, object metaData)
         {
-            string name = (metaData as Hashtable)["name"] as string;
-            string content_type = (metaData as Hashtable)["content_type"] as string;
+            string name = (metaData as Hashtable)[_GitHubRelease.ASSET_FILENAME] as string;
+            string content_type = (metaData as Hashtable)[_GitHubRelease.ASSET_CONTENT_TYPE] as string;
             DownloadState dl = destination as DownloadState;
 
 
-#if TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] received download {request.downloadHandler.data.Length} as {name}");
-#endif
             bool mkdirSuccess = false;
             try
             {
+                if (Directory.Exists(dl.destDir))
+                {
+                    /* Cleanup old failed download */
+                    Directory.Delete(dl.destDir, true);
+                }
                 if (!Directory.Exists(dl.destDir))
                 {
                     Directory.CreateDirectory(dl.destDir);
@@ -102,7 +121,7 @@ namespace HarmonyMod
             }
             catch (Exception ex)
             {
-                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Failed to create {dl.destDir}");
+                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Failed to create {dl.destDir}: {ex.Message}");
             }
 
             if (!mkdirSuccess)
@@ -113,9 +132,6 @@ namespace HarmonyMod
             {
                 if (content_type == "application/zip")
                 {
-#if TRACE
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}] Should unzip {name} to {dl.destDir}");
-#endif
                     dl.files = new Zip(request.downloadHandler.data, name).UnzipTo(dl.destDir);
                 }
                 else
@@ -140,9 +156,15 @@ namespace HarmonyMod
             {
                 installationState = InstallationState.SaveError;
                 yield return DownloadManager.saveError;
+            } else
+            {
+                installationState = InstallationState.Saving;
             }
         }
+        void FilterKnownTags()
+        {
 
+        }
         public IEnumerable<YieldInstruction> HandleReleases(UnityWebRequest request, object destination, object context)
         {
             Collection collection = destination as Collection;
@@ -180,10 +202,9 @@ namespace HarmonyMod
             }
             catch (Exception ex)
             {
-#if TRACE
-                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERR: Handling Releases of {item} failed: {ex}");
-#endif
+#if !INSTALLER
                 Mod.SelfReport(IAwareness.SelfProblemType.FailedToInitialize, ex);
+#endif
                 error = true;
             }
             if (error)
@@ -194,25 +215,16 @@ namespace HarmonyMod
         {
             Redirect latestRelease = default(Redirect);
 
-            #region Fetch Release info
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Fetching release for {this} Latest={(m_Latest.exists ? m_Latest.value : "none")}");
-#endif
+#region Fetch Release info
             {
-// #if RELEASE
                 var headCheck = dl.downloadManager.HttpHead("https://" + host + "/" + authorName + "/" + repo + "/releases/latest");
-// #else
-//                var headCheck = dl.downloadManager.HttpHead("http://" + host + "/" + authorName + "/" + repo + "/releases");
-// #endif
                 while (headCheck.MoveNext())
                 {
                     if (headCheck.Current is Redirect redirect)
                     {
                         if (m_Latest.exists && m_Latest.value == redirect.location)
                         {
-                            // installationState = InstallationState.NoUpdateAvailable;
                             yield return DownloadManager.notModified;
-                            // yield break;
                         }
                         else
                             latestRelease = redirect;
@@ -220,26 +232,18 @@ namespace HarmonyMod
                     }
                     else if (headCheck.Current == DownloadManager.notFound)
                     {
-                        // The repo does not exist (or network connection?)
                         installationState = InstallationState.DoesNotExist;
                     }
                     yield return headCheck.Current;
                 }
 
-#if HEAVY_TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Verified that {this} exists (state={installationState}). Now check releases.");
-#endif
             }
 
             // Mod.mainModInstance.modManager.repo.SetRebaseTo();
             var download = dl.downloadManager.HttpGet(
-//#if RELEASE
                 url: "https://api." + host + "/repos/" + authorName + "/" + repo + "/releases",
-// #else
-//                 url: "http://" + host + "/" + authorName + "/" + repo + "/releases",
-// #endif
                 accept: ACCEPT_RELEASE_DATA,
-                destination: Mod.mainModInstance.repo,
+                destination: Mod.repo,
                 etag: null,
                 context: this,
                 downloadHandler: HandleReleases);
@@ -248,18 +252,15 @@ namespace HarmonyMod
             {
                 if (download.Current == DownloadManager.notModified)
                 {
-                    // installationState = InstallationState.NoUpdateAvailable;
                     break;
                 }
                 else if (download.Current == DownloadManager.downloadError)
                 {
                     installationState = InstallationState.InfoError;
-                    // break;
                 }
                 else if (download.Current == DownloadManager.notFound)
                 {
                     installationState = InstallationState.InfoError;
-                    // break;
                 }
                 else if (download.Current is TemporaryError)
                 {
@@ -275,36 +276,39 @@ namespace HarmonyMod
         IEnumerator<YieldInstruction> FetchAssets(Loaded destination, Hashtable itemRelease, DownloadState dl)
         {
 #region Fetching Assets
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] Fetching assets for {this}");
-#endif
 
 #region Setup download location
             /* Each local mod is a worktree, so the mod files must be at the root of the workingDirectory.
              * Non-local mod files share a worktree, so they will be in a subdir named for the mod's full branch name
              */
-            dl.destDir = Path.Combine(Mod.mainModInstance.repo.tempDir, downloadToDir);
-
-#endregion
-
-            var authorHash = itemRelease["author"] as Hashtable;
-            authorID = ((long)authorHash["id"]).ToString();
-            foreach (Hashtable asset in itemRelease["assets"] as ArrayList)
+            if (destination.orig.publishedFileID == ColossalFramework.PlatformServices.PublishedFileId.invalid)
             {
-                var download = asset["content_type"] as string switch
-                {
-                    "application/zip" => dl.downloadManager.HttpGet(
-                            url: asset["browser_download_url"] as string,
-                            accept: ACCEPT_BINARIES,
-                            destination: dl,
-                            etag: string.Empty,
-                            context: asset,
-                            downloadHandler: HandleDownload),
+                dl.destDir = Path.Combine(Mod.repo.tempDir, downloadToDir);
+            } else
+            {
+                dl.destDir = destination.orig.modPath + ".download";
+            }
 
-                    _ => DoNothing(asset["content_type"] as string),
-                };
-                while (download.MoveNext()) {
-                    yield return download.Current;
+            #endregion
+
+            foreach (Hashtable asset in itemRelease[_GitHubRelease.REL_ASSETS] as ArrayList)
+            {
+                if ((asset[_GitHubRelease.ASSET_FILENAME] as string).StartsWith(Versioning.INSTALL_FILENAME)) {
+                    var download = asset[_GitHubRelease.ASSET_CONTENT_TYPE] as string switch
+                    {
+                        "application/zip" => dl.downloadManager.HttpGet(
+                                url: asset[_GitHubRelease.ASSET_DOWNLOAD_URL] as string,
+                                accept: ACCEPT_BINARIES,
+                                destination: dl,
+                                etag: string.Empty,
+                                context: asset,
+                                downloadHandler: HandleDownload),
+
+                        _ => DoNothing(asset[_GitHubRelease.ASSET_CONTENT_TYPE] as string),
+                    };
+                    while (download.MoveNext()) {
+                        yield return download.Current;
+                    }
                 }
             }
 #endregion
@@ -316,20 +320,14 @@ namespace HarmonyMod
             DownloadManager downloadManager
             )
         {
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] Installer DoWork on {this} for mod {destination}");
-#endif
             var dl = new DownloadState(downloadManager);
 
             Collection.CheckoutResult result;
 
 #region Check if download can be avoided
-            result = Mod.mainModInstance.repo.PrepareToDownload(this, update, out Hashtable itemRelease);
+            result = Mod.repo.PrepareToDownload(this, update, out Hashtable itemRelease);
             if (result == Collection.CheckoutResult.OK)
             {
-#if TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Installation of {this} succeeded from local repo");
-#endif
                 yield break;
             }
 #endregion
@@ -343,41 +341,23 @@ namespace HarmonyMod
                     else
                     yield return activity.Current;
 
-                result = Mod.mainModInstance.repo.PrepareToDownload(this, false, out itemRelease);
-                //if (result == Collection.CheckoutResult.UnknownRelease)
-                //    installationState = InstallationState.NoUpdateAvailable;
-
+                result = Mod.repo.PrepareToDownload(this, false, out itemRelease);
             }
 
             if (result == Collection.CheckoutResult.NeedAssets)
             {
+                installationState = InstallationState.Downloading;
                 var activity = FetchAssets(destination, itemRelease, dl);
                 while (activity.MoveNext()) yield return activity.Current;
 
-#if TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - {this} succeeded to download location {dl.destDir != null}");
-#endif
-                dl.packageInfo.Add(_Item.RELEASE_DATA_ID_RELEASE, itemRelease);
-                dl.DownloadSuccess(destination, this, itemRelease, dl);
-
-                try
+                if (installationState == InstallationState.Saving)
                 {
-                    IsFalse(Directory.Exists(dl.destDir), "Download dest dir should have been moved in place");
-                    if (Directory.Exists(dl.destDir))
-                    {
-#if HEAVY_TRACE
-                        Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Delete Dest directory '{dl.destDir}' for {this}");
-#endif
-                        Directory.Delete(dl.destDir, true);
-                    }
-                }
-                catch (Exception ex)
+                    dl.packageInfo.Add(_Item.RELEASE_DATA_ID_RELEASE, itemRelease);
+                    dl.DownloadSuccess(destination, this, itemRelease, dl);
+                } else
                 {
-                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR: Failed to delete {dl.destDir}");
-                    Mod.mainModInstance.report.ReportPlugin(destination.orig, ModReport.ProblemType.ExceptionThrown, ex, "Temp Download Directory removal failed");
+                    yield return DownloadManager.releaseDoesNotExist;
                 }
-
-
             }
             else if (result == Collection.CheckoutResult.OK)
             {
@@ -385,7 +365,6 @@ namespace HarmonyMod
             }
             else
             {
-                // LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARN: No matching releases found for {this} - result = {result}");
                 if (installationState == InstallationState.DoesNotExist)
                     yield return DownloadManager.repoDoesNotExist;
                 else if (installationState == InstallationState.ReleaseNotFound)
@@ -397,8 +376,6 @@ namespace HarmonyMod
                 else
                     yield return DownloadManager.downloadError;
                          
-                //installationState = InstallationState.ReleaseNotFound;
-                //yield return DownloadManager.releaseDoesNotExist;
             }
             Log($"[{Versioning.FULL_PACKAGE_NAME}] Installer DoWork on {this} for mod {destination} DONE");
         }

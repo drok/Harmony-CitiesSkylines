@@ -32,7 +32,6 @@ using UnityEngine.SceneManagement;
 using static UnityEngine.Debug;
 using static UnityEngine.Assertions.Assert;
 using Harmony2::HarmonyLib;
-using static UnityEngine.Debug;
 
 using static ColossalFramework.Plugins.PluginManager;
 
@@ -1234,7 +1233,6 @@ namespace HarmonyMod
             return firstFailureProblemCount;
         }
 
-#if TRACE
         internal static PluginInfo FindCallerMod(System.Diagnostics.StackTrace stackTrace, out AssemblyName guiltyAssembly)
         {
             PluginInfo origin = null;
@@ -1273,6 +1271,7 @@ namespace HarmonyMod
             return origin;
         }
 
+#if TRACE
         internal static PluginInfo FindCallOrigin(System.Diagnostics.StackTrace stackTrace)
         {
             PluginInfo origin = null;
@@ -1312,6 +1311,7 @@ namespace HarmonyMod
                 TryReportPlugin(ex);
             }
         }
+#if TRACE
         internal void ReportPlugin(ModReport.ProblemType problem, Exception ex, int skipframes, out AssemblyName guiltyMod, string detail = null)
         {
             var plugin = FindCallerMod(new System.Diagnostics.StackTrace(skipframes + 1, true), out guiltyMod);
@@ -1324,6 +1324,7 @@ namespace HarmonyMod
             }
 
         }
+#endif
         internal void ReportPlugin(ModReport.ProblemType problem, Exception ex, int skipframes, out AssemblyName guiltyMod, AssemblyName assemblyName)
         {
             var plugin = FindCallerMod(new System.Diagnostics.StackTrace(skipframes + 1, true), out guiltyMod);

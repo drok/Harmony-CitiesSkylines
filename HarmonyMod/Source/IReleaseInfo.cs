@@ -30,16 +30,7 @@ namespace HarmonyMod
         /* Release manager bits */
         Hashtable packageInfo { get; set; }
         public IEnumerable<string> files { get; set; }
-        // string dllName { get; }
         string destDir { get; set; }
 
-        // void Enqueue(Loaded destination, Item item, bool update);
-        // void ResetDownloadData();
-
-        /* Download Manager Bits */
-        // IEnumerator<YieldInstruction> HttpHead(string url);
-        // IEnumerator<YieldInstruction> HttpGet(string url, string accept, object destination, string etag, object context, Func<UnityWebRequest, object, object, IEnumerable<YieldInstruction>> downloadHandler);
-        // IEnumerator<YieldInstruction> HttpPost(string url, string accept, Dictionary<string, string> formFields, object destination, string etag, object context, Func<UnityWebRequest, object, object, IEnumerable<YieldInstruction>> downloadHandler);
-        // void DownloadSuccess(Loaded mod, Item item, string destDir);
     }
 }

@@ -1,7 +1,27 @@
-﻿using System;
+﻿/*
+ * Harmony for Cities Skylines
+ *  Copyright (C) 2021 Radu Hociung <radu.csmods@ohmi.org>
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the modified GNU General Public License as
+ *  published in the root directory of the source distribution.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  modified GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+using System;
 using System.Collections.Generic;
 using static UnityEngine.Assertions.Assert;
 using ColossalFramework.Packaging;
+#if INSTALLER
+using static UnityEngine.Debug;
+#endif
 
 namespace HarmonyMod
 {
@@ -32,7 +52,6 @@ namespace HarmonyMod
         public virtual ColossalFramework.PlatformServices.PublishedFileId fileId => ColossalFramework.PlatformServices.PublishedFileId.invalid;
 
         public abstract string typeID { get; }
-        public abstract string authorID { get; set; }
         public abstract string authorName { get; set; }
         public abstract string repo { get; }
         public abstract string host { get; }
@@ -51,9 +70,7 @@ namespace HarmonyMod
         protected string m_thumbnail;
         public virtual byte[] thumbnail => Convert.FromBase64String(m_thumbnail);
 
-        // public virtual bool isBuiltIn { get => false; set { throw new NotImplementedException(); } }
         public bool isBuiltIn => installationState == InstallationState.Builtin;
-        //public virtual bool isMissing => false;
         public virtual bool isMyWork { get => false; protected set { } }
 
 
@@ -66,6 +83,7 @@ namespace HarmonyMod
         {
             get
             {
+                // throw new NotImplementedException();
                 return "_tmp_" + myBranchAsDirectory;
             }
         }
@@ -75,8 +93,6 @@ namespace HarmonyMod
         {
             get => installationState switch
             {
-                // InstallationState.Installed => m_title,
-                // InstallationState.Builtin => m_title,
                 _ => (m_title == null ? ToString() : m_title) + " - " + installationState.ToString(),
             };
             set => m_title = value;
@@ -89,13 +105,10 @@ namespace HarmonyMod
         public virtual InstallationState installationState { get => m_installationState;
             set {
                 ValidateStateChange(this, value);
-                //if (value == InstallationState.Downloading || value == InstallationState.DoesNotExist)
-                //    LogError($"[{Versioning.FULL_PACKAGE_NAME}] BREAK - set {this} = {value}");
 
                 m_installationState = value;
             }
         }
-//        public virtual bool isInstalled => updated.HasValue;
 
         /// <summary>
         /// Install the item if necessary
@@ -103,19 +116,6 @@ namespace HarmonyMod
         /// <param name="requiredBy"></param>
         /// <returns>True if install is successful, False if install is pendinding</returns>
         public abstract void Install(Loaded requiredBy, bool update);
-
-        /// <summary>
-        /// Sets the versionSpec to a fixed version, stored at the given Commit
-        /// </summary>
-        /// <param name="c"></param>
-        // public abstract void Pin();
-        // public virtual void Pin(bool pinned)
-        // {
-        //     UnityEngine.Assertions.Assert.IsNotNull(version,
-        //         "Cannot when version is unset");
-        // 
-        //     m_versionSpec = pinned ? version : null;
-        // }
 
         /// <summary>
         /// Base of branch name in the local repo (ex. "G/drok/Harmony-CitiesSkylines")
@@ -135,9 +135,6 @@ namespace HarmonyMod
         /// </summary>
         public abstract string myBranchAsDirectory { get; }
 
-
-        // public virtual Package.AssetType assetType { get; set; }
-        // public virtual Package.AssetType assetType { get; set; }
         public virtual Package.AssetType assetType { get; set; }
 
         public static Item ItemFromURI(string s)
@@ -165,7 +162,11 @@ namespace HarmonyMod
 
         public virtual void OnDownloadFailed(Loaded requestedBy, bool update, DownloadManager downloadManager, DownloadError error)
         {
+#if INSTALLER
+			LogError($"[{Versioning.FULL_PACKAGE_NAME}] {(update ? "Updating" : "Installing")} failed: {error}");
+#else
             Mod.mainModInstance.report.ReportPlugin(requestedBy.orig, ModReport.ProblemType.GenericProblem, (update ? "Updating" : "Installing") + $" {this} failed: {error}");
+#endif
             ColossalFramework.Singleton<ColossalFramework.Plugins.PluginManager>.instance.ForcePluginsChanged();
 
         }
@@ -190,6 +191,7 @@ namespace HarmonyMod
                     from.Add(InstallationState.Unknown);
                     break;
                 case InstallationState.Downloading:
+                    from.Add(InstallationState.FetchingReleaseInfo);
                     from.Add(InstallationState.UpdateAvailable);
                     from.Add(InstallationState.NoUpdateAvailable); /* NeedAssets */
                     break;

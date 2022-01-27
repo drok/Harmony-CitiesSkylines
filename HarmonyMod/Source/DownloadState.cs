@@ -19,6 +19,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using static UnityEngine.Debug;
+#if INSTALLER
+using HarmonyInstaller;
+#endif
 
 namespace HarmonyMod
 {
@@ -56,25 +59,17 @@ namespace HarmonyMod
             get { return m_destDir; }
             set
             {
-#if HEAVY_TRACE
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - DM destDir was {m_destDir ?? "null"} set to {value ?? "null"} at" +
-                    $"\n{new System.Diagnostics.StackTrace(true)}");
-#endif
                 m_destDir = value;
             }
         }
 
         public void DownloadSuccess(Loaded mod, Item item, Hashtable release, DownloadState dl)
         {
-#if HEAVY_TRACE
-            LogError($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Download {mod?.ToString() ?? "null"} to {m_destDir ?? "null"} SUCCESS");
-#endif
-            // Debug.Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - VVVVVVVV Add v={item.version} has {(info.ContainsKey("v") ? info["v"] as string : "no v")}" +
-            //     $" from \n{new System.Diagnostics.StackTrace(true)}");
-            //info.Add("v", item.version);
-
             mod?.OnDownloaded(item);
-            Mod.mainModInstance.repo.OnSuccessfulDownload(mod, item, release, dl);
+            bool installed = Mod.repo.OnSuccessfulDownload(mod, item, release, dl);
+
+            if (installed)
+                mod?.OnInstalled(item);
 
         }
 

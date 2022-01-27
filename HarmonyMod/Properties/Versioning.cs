@@ -27,9 +27,15 @@ namespace HarmonyMod
     {
         public const string ReleaseStr = "0";
         public const uint ImplementationVersion = 0x000a0000;
+        public const uint StorageVersion = 1;
         public const string MyAssemblyVersion = "1.0.1." + ReleaseStr + ReleaseTypeStr;
         public const string MyFileVersion = "1.0";
+#if INSTALLER
+        public const string PACKAGE_NAME = "Harmony Installer";
+#else
         public const string PACKAGE_NAME = "Harmony";
+#endif
+        public const string INSTALL_FILENAME = "HarmonyMod";
 #if DEBUG
         public const string PUBLISH_URL = "https://github.com/drok/reltest";
 #else

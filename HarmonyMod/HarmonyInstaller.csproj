@@ -1,40 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" DefaultTargets="Build">
   <PropertyGroup>
-    <ProjectGuid>{1821BC25-9494-40B7-8229-945C60C16BC2}</ProjectGuid>
+    <ProjectGuid>{C07FE5CD-5BC9-469D-A7CB-9C88E534D5CB}</ProjectGuid>
     <TargetFramework>net35</TargetFramework>
     <Deterministic>false</Deterministic>
-    <AssemblyTitle>HarmonyMod</AssemblyTitle>
-    <Configurations>Debug;Release;Beta;Developer-Updater;Developer</Configurations>
-	   <!--
+    <AssemblyTitle>HarmonyInstaller</AssemblyTitle>
+    <Configurations>Debug;Release</Configurations>
 
-		IMPORTANT, FIXME:
-
-		The Developer config should be built first, then Developer-Updater, for each source change
-
-		The batch build makes them in the opposite order, which means the Developer-Update output folder
-		will contain the last version of Developer, not the current version.
-
-		I don't know how to fix it. If you do, please drop me a note. Thank you
-
-
-
-	   -->
 		<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
 		<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
 		<GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
 		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
 		<GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-		<AssemblyName>HarmonyMod</AssemblyName>
+		<AssemblyName>HarmonyInstaller</AssemblyName>
 		<PackageId>Harmony-CitiesSkylines</PackageId>
 		<Authors>Radu Hociung</Authors>
-		<Description>This is a mod for Cities: Skylines that provides common infrastructure like patching (using Andreas Pardeike' Harmony),
-compatibility management, exception management, etc</Description>
-		<Copyright>2021</Copyright>
+		<Description>This is the installer for Harmony Mod, downloading the latest Mod from GitHub and installing it in place.</Description>
+		<Copyright>2022</Copyright>
 		<RepositoryUrl>https://github.com/drok/Harmony-CitiesSkylines</RepositoryUrl>
 	  <LangVersion>latest</LangVersion>
 	  <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
-	  <EnableDefaultItems>true</EnableDefaultItems>
+	  <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
 	<PropertyGroup>
 		<DelaySign>false</DelaySign>
@@ -42,11 +28,41 @@ compatibility management, exception management, etc</Description>
 		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
 		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
 		<UserSecretsId>631fdc66-d970-44a9-9df3-895a0745b50e</UserSecretsId>
+		<OutDir>bin\Installer\$(Configuration)\$(TargetFramework)</OutDir>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Remove="Source\Install.cs" />
+		<Compile Include="Source\Install.cs" />
 	</ItemGroup>
-	
+	<ItemGroup>
+
+		<Compile Include="Properties\AssemblyInfo.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\IPriorityQueue.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\IFixedSizePriorityQueue.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\GenericPriorityQueue.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\GenericPriorityQueueNode.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\SimplePriorityQueue.cs" />
+
+		<Compile Include="Json.NetMF\source\Json.NetMF\JsonParser.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\JsonSerializer.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\NumberExtensions.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\StringExtensions.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\DateTimeExtensions.cs" />
+
+		<Compile Include="Properties\Versioning.cs" />
+		<Compile Include="Source\Item\_Item.cs" />
+		<Compile Include="Source\Item\Item.cs" />
+		<Compile Include="Source\Item\_GitHubRelease.cs" />
+		<Compile Include="Source\Item\GitHubRelease.cs" />
+		<Compile Include="Source\PluginManager\Loaded.cs" />
+		<Compile Include="Source\Epoch.cs" />
+		<Compile Include="Source\Collection.cs" />
+		<Compile Include="Source\Downloadable.cs" />
+		<Compile Include="Source\DownloadManager.cs" />
+		<Compile Include="Source\DownloadState.cs" />
+		<Compile Include="Source\IReleaseInfo.cs" />
+		<Compile Include="Source\RetryWait.cs" />
+		<Compile Include="Source\Zip.cs" />
+	</ItemGroup>
 	<ItemGroup>
 	  <Compile Remove="Json.NetMF\nuspec\**" />
 	  <Compile Remove="Json.NetMF\source\Json.NetMF\Properties\**" />
@@ -112,29 +128,11 @@ compatibility management, exception management, etc</Description>
 	  <None Remove="Resources\HarmonyMod-0.9.0.1.dll" />
 	</ItemGroup>
 	<ItemGroup>
-    <ProjectReference Include="..\Compat-CitiesHarmony-Mod\Compat-CitiesHarmony-Mod.csproj">
-		<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-		<Private Condition="'$(Configuration)'!='Developer-Updater' and '$(Configuration)'!='Developer'">true</Private>
-		<Private Condition="'$(Configuration)'=='Developer-Updater' or '$(Configuration)'=='Developer'">false</Private>
-		<CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </ProjectReference>
-    <ProjectReference Include="..\Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\Compat-CitiesHarmony.Harmony-2.0.4.0.csproj">
-      <Aliases>HarmonyCHH2040</Aliases>
-    </ProjectReference>
-    <ProjectReference Include="..\Harmony-v2\Harmony\Harmony-v2.csproj">
-      <Aliases>Harmony2</Aliases>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-      <Private Condition="'$(Configuration)'!='Developer-Updater' and '$(Configuration)'!='Developer'">true</Private>
-      <Private Condition="'$(Configuration)'=='Developer-Updater' or '$(Configuration)'=='Developer'">false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </ProjectReference>
-    <ProjectReference Include="..\IAmAware\IAwareness0.csproj" />
-    <ProjectReference Include="..\MonoMod.Common\MonoMod.Common.csproj" />
-    <Reference Include="Assembly-CSharp">
-      <HintPath>C:\References\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ColossalManaged">
+		<Reference Include="Assembly-CSharp">
+			<HintPath>C:\References\Assembly-CSharp.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ColossalManaged">
       <HintPath>C:\References\ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -151,56 +149,32 @@ compatibility management, exception management, etc</Description>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-	<ItemGroup>
-		<EmbeddedResource Include="Resources\HarmonyLogo.png">
-		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
-	</ItemGroup>
-       <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningsAsErrors>;NU1605</WarningsAsErrors>
-    <DefineConstants></DefineConstants>
   </PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)'!='Release'">
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
 		<Optimize>false</Optimize>
 		<DebugType>full</DebugType>
 		<DebugSymbols>true</DebugSymbols>
+		<WarningsAsErrors>;NU1605</WarningsAsErrors>
+		<DefineConstants>INSTALLER;TRACE;DEBUG;HEAVY_TRACE</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='DebugRetries'">
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<WarningsAsErrors>;NU1605</WarningsAsErrors>
+		<DefineConstants>INSTALLER;TRACE;DEBUG;HEAVY_TRACE;SIMULATE_NETWORK_FAILURES</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<Optimize>true</Optimize>
 		<DebugType>none</DebugType>
 		<DebugSymbols>false</DebugSymbols>
+		<DefineConstants>INSTALLER</DefineConstants>
 	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Beta|AnyCPU'">
-    <DefineConstants>TRACE;UNITY_ASSERTIONS</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer|AnyCPU'">
-    <DefineConstants>TRACE;DEVELOPER</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Developer-Updater|AnyCPU'">
-    <DefineConstants>TRACE;DEVELOPER;DEVELOPER_UPDATER</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>DEBUG;TRACE;HEAVY_TRACE;UNITY_ASSERTIONS</DefineConstants>
-  </PropertyGroup>
-
-	<ItemGroup Condition="'$(Configuration)'=='Developer-Updater'">
-	  <Content Include="bin\Developer\$(TargetFramework)\$(TargetFileName)">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	    <Link>HarmonyMod_helper_dll</Link>
-	  </Content>
-		<Content Include="bin\Developer\$(TargetFramework)\$(TargetName).pdb">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>HarmonyMod_helper_pdb</Link>
-		</Content>
-	</ItemGroup>
-
-	<!-- Gihub Release:
+		<!-- Gihub Release:
 			gh release create v2.2 - -title "Release no. 2.2" - -notes "4rd release" - -target maintenance-0.9 bin/Harmony-CitiesSkylines-Debug.zip\#"Mod Archive" bin/Thumbnail.png\#"Simple Thumbnail"
 	-->
 	<Target Name="DeployToModDirectory" AfterTargets="Build" Condition="'$(Configuration)'!='Developer'">
@@ -221,15 +195,8 @@ compatibility management, exception management, etc</Description>
 		<UnityPath Condition="! Exists ('$(UnityPath)')">H:\Programs\Unity\</UnityPath>
 		<!-- End Custom Unity Install path -->
 		<UnityPath Condition="! Exists ('$(UnityPath)')">..\Unity\</UnityPath>
-		<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(SolutionName)-$(Configuration)\</ModDirectory>
+		<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(ProjectName)-$(Configuration)\</ModDirectory>
 	</PropertyGroup>
-
-    <ItemGroup Condition="'$(Configuration)'=='Developer-Updater'">
-      <ModFiles Include="$(TargetDir)$(TargetName).dll" />
-      <ModFiles Include="$(TargetDir)$(TargetName).dll.mdb" />
-      <ModFiles Include="$(TargetDir)$(TargetName)_helper_dll" />
-      <ModFiles Include="$(TargetDir)$(TargetName)_helper_pdb" />
-    </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'!='Developer' and '$(Configuration)'!='Developer-Updater'">
 	  <ModFiles Include="$(TargetDir)*.dll" />
