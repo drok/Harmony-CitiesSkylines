@@ -9,8 +9,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <Platform Condition="'$(Platform)' == ''">Any CPU</Platform>
     <DebugType Condition="'$(DebugType)' == ''">portable</DebugType>
-    <OutputPath>bin\$(Configuration)</OutputPath>
-
+    
     <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
@@ -20,7 +19,7 @@
 
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentation Condition="'$(GenerateDocumentation)' == ''">true</GenerateDocumentation>
     <DocumentationFile Condition="'$(DocumentationFile)' == ''">$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
 
