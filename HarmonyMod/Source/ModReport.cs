@@ -35,9 +35,13 @@ namespace HarmonyMod
     internal class ModReport : ModReportBase
     {
         PluginInfo plugin;
+#if REPORT_AUTHORS
+        readonly SavedString Author;
+#else
         Version needsHarmony,
             needsHarmonyAPI,
             needsNewHarmony;
+#endif
 
         HashSet<AssemblyName> m_missingAssemblies = new HashSet<AssemblyName>(new SameAssemblyName());
 
@@ -74,6 +78,11 @@ namespace HarmonyMod
         internal ModReport(PluginInfo p, HashSet<AssemblyName> haveAssemblies, HarmonyModSupportException unsupportedLibs = null, bool enumerated = true)
         {
             plugin = p;
+#if REPORT_AUTHORS
+            var authorId = new SavedString(p.publishedFileID.AsUInt64.ToString(), Settings.userGameState, UserID.invalid.ToString(), true);
+            Author = new SavedString(authorId.value, Settings.userGameState, string.Empty, true);
+#endif
+
             isEnumerated = enumerated;
 
             SameAssemblyName sameName = new SameAssemblyName();
@@ -89,15 +98,21 @@ namespace HarmonyMod
                             switch (assemblyName.Name)
                             {
                                 case "0Harmony":
+#if !REPORT_AUTHORS
                                     needsHarmony = assemblyName.Version;
+#endif
                                     m_usesHarmony = true;
                                     break;
                                 case "CitiesHarmony.API":
+#if !REPORT_AUTHORS
                                     needsHarmonyAPI = assemblyName.Version;
+#endif
                                     m_usesHarmony = true;
                                     break;
                                 case "CitiesHarmony.Harmony":
+#if !REPORT_AUTHORS
                                     needsNewHarmony = assemblyName.Version;
+#endif
                                     m_usesHarmony = true;
                                     break;
                             }
@@ -240,9 +255,11 @@ namespace HarmonyMod
                 }
             }
 
+#if !REPORT_AUTHORS
             string harmonyVer = needsHarmony != null ? $"0H: {needsHarmony.ToString()}" :
                                 needsNewHarmony != null ? $"CH: {needsNewHarmony.ToString()}" : string.Empty;
             string harmonyAPI = needsHarmonyAPI != null ? needsHarmonyAPI.ToString() : string.Empty;
+#endif
 
             string summaryLines;
             string problems;
@@ -262,19 +279,28 @@ namespace HarmonyMod
                     {
                         summaryLines += " <ul>" + problems + missingAssembliesStr + "</ul>";
                     }
-
-                    summaryLines += $" | {Name.Max(31)} | ";
+                    summaryLines += $" | {Name.Max(27)} | ";
+#if REPORT_AUTHORS
+                    if (!string.IsNullOrEmpty(Author.value) && Author.exists)
+                        summaryLines += $" | `{Author.value}`";
+#else
                     if (!string.IsNullOrEmpty(harmonyVer))
                         summaryLines += $"`{harmonyVer}`";
                     summaryLines += " | ";
                     if (!string.IsNullOrEmpty(harmonyAPI))
                         summaryLines += $"`{harmonyAPI}`";
+#endif
                     summaryLines += "\n";
                     
                     break;
                 default:
                     problems = ProblemSummary(reportFormat, "                   [ERR] ", brief ? Report.MAX_PROBLEMS_PER_TYPE_IN_DISPLAY : Report.MAX_PROBLEMS_PER_TYPE_IN_LOG);
-                    summaryLines = $"{strEnabled} {location.Max(23),-24} {modType.Max(31),-32} {Name.Max(31),-32} {harmonyVer,-14} {harmonyAPI,-10}\n";
+                    summaryLines = $"{strEnabled} {location.Max(19),-20} {modType.Max(25),-26} {Name.Max(27),-28}";
+#if REPORT_AUTHORS
+                    summaryLines += $" {Author.value,-14}\n";
+#else
+                    summaryLines += $" {harmonyVer,-14} {harmonyAPI,-10}\n";
+#endif
                     summaryLines += problems + missingAssembliesStr;
                     break;
             }

@@ -118,6 +118,14 @@ compatibility management, exception management, etc</Description>
 		<Private Condition="'$(Configuration)'=='Developer-Updater' or '$(Configuration)'=='Developer'">false</Private>
 		<CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+	<!--
+    <ProjectReference Include="..\Compat-CitiesHarmony.API\Compat-CitiesHarmony.API.csproj">
+		<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+		<Private Condition="'$(Configuration)'!='Developer-Updater' and '$(Configuration)'!='Developer'">true</Private>
+		<Private Condition="'$(Configuration)'=='Developer-Updater' or '$(Configuration)'=='Developer'">false</Private>
+		<CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+	-->
     <ProjectReference Include="..\Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\Compat-CitiesHarmony.Harmony-2.0.4.0.csproj">
       <Aliases>HarmonyCHH2040</Aliases>
     </ProjectReference>
@@ -159,7 +167,7 @@ compatibility management, exception management, etc</Description>
        <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors>;NU1605</WarningsAsErrors>
-    <DefineConstants></DefineConstants>
+    <DefineConstants>REPORT_AUTHORS</DefineConstants>
   </PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'!='Release'">
 		<Optimize>false</Optimize>
@@ -201,7 +209,7 @@ compatibility management, exception management, etc</Description>
 	</ItemGroup>
 
 	<!-- Gihub Release:
-			gh release create v2.2 - -title "Release no. 2.2" - -notes "4rd release" - -target maintenance-0.9 bin/Harmony-CitiesSkylines-Debug.zip\#"Mod Archive" bin/Thumbnail.png\#"Simple Thumbnail"
+			gh release create v3.12 - -title "Release no. 3.12" - -notes "3.12 release" - -target maintenance-0.9 $LOCALAPPDATA/Colossal\ Order/Cities_Skylines/Addons/Mods/HarmonyMod-Debug-3.12.zip\#"Mod Archive" bin/Thumbnail.png\#"Simple Thumbnail"
 	-->
 	<Target Name="DeployToModDirectory" AfterTargets="Build" Condition="'$(Configuration)'!='Developer'">
 	<PropertyGroup>

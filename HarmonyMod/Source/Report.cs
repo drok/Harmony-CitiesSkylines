@@ -15,13 +15,16 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-
 extern alias Harmony2;
 using IAwareness;
 using ColossalFramework;
 using ColossalFramework.UI;
 using ColossalFramework.Plugins;
 using ColossalFramework.DataBinding;
+#if REPORT_AUTHORS
+using ColossalFramework.PlatformServices;
+using static ColossalFramework.PlatformServices.PlatformService;
+#endif
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -69,10 +72,7 @@ namespace HarmonyMod
         private readonly Color32 COLOR_SELF_GOOD = new Color32(202, 235, 207, 255);
         private readonly Color32 COLOR_USES_HARMONY_GOOD = new Color32(202, 235, 207, 255);
 
-        // Color32 normalColor = default(Color32);
-
         string report = string.Empty;
-//         ReportFormat reportFormat = ReportFormat.PlainText;
 
         readonly Dictionary<PluginInfo, ModReportBase> m_modReports;
         readonly Dictionary<string, PluginInfo> m_removedMods;
@@ -121,9 +121,6 @@ namespace HarmonyMod
        public Report()
        {
             selfDiag_problems = new bool[(int)SelfProblemType.Last];
-#if HEAVY_TRACE
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Report Created\n{(new System.Diagnostics.StackTrace(0, true)).ToString()}");
-#endif
 
             m_modReports = new Dictionary<PluginInfo, ModReportBase>();
             m_removedMods = new Dictionary<string, PluginInfo>();
@@ -149,8 +146,19 @@ namespace HarmonyMod
 #if IMPLEMENTED_CUSTOM_ICON_ON_REPORT_PANEL
             Logo = LoadDllResource("HarmonyLogo.png", 800, 800);
 #endif
+#if REPORT_AUTHORS
+            workshop.eventUGCRequestUGCDetailsCompleted += AuthorNameCache;
+#endif
         }
 
+#if REPORT_AUTHORS
+        private void AuthorNameCache(UGCDetails details, bool ioError)
+        {
+            var creator = details.creatorID.ToString();
+            new SavedString(details.publishedFileId.ToString(), Settings.userGameState, string.Empty, true).value = creator;
+            new SavedString(creator, Settings.userGameState, string.Empty, true).value = new Friend(details.creatorID).personaName;
+        }
+#endif
         private void Decorate(bool forDisplay, ReportFormat reportFormat)
         {
             string headline = string.Empty;
@@ -174,14 +182,23 @@ namespace HarmonyMod
                 case ReportFormat.Gist:
                     report =
                         $"###{headline}\n" +
+#if REPORT_AUTHORS
+                        "No. | e | Location | Class Type | Issues | Name | Author\n" +
+#else
                         "No. | e | Location | Class Type | Issues | Name | Lib.Harmony | API\n" +
+#endif
                         "----|---|----------|------------|--------|------|-------------|-----\n" +
                         report;
                     break;
                 default:
                     report =
-                         "No.|e| Location               | Class Type                    | Name                             | Lib.Harmony | API ---\n" +
-                         "---+-+------------------------+-------------------------------+----------------------------------+-------------+--------\n" +
+#if REPORT_AUTHORS
+                         "No.|e| Location           | Class Type              | Name                         | Author\n" +
+                         "---+-+--------------------+-------------------------+------------------------------+-------------\n" +
+#else
+                         "No.|e| Location           | Class Type              | Name                         | Lib.Harmony | API ---\n" +
+                         "---+-+--------------------+-------------------------+------------------------------+-------------+--------\n" +
+#endif
                          $"                                      {headline}\n" +
                         report;
                     break;
@@ -207,9 +224,9 @@ namespace HarmonyMod
                         "\n\n=========================================================================================================================");
                     break;
                 default:
-                    Log($"[{Versioning.FULL_PACKAGE_NAME}]  ================================= {title} ====================================\n" +
+                    Log($"[{Versioning.FULL_PACKAGE_NAME}]  ================================= {title} ==================================\n" +
                         report +
-                        "=========================================================================================================================");
+                        "=================================================================================================");
                     break;
             }
         }
@@ -245,10 +262,6 @@ namespace HarmonyMod
             int problematicMods = 0;
             missingAssemblies.Clear();
 
-#if HEAVY_TRACE
-            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.PrepareReport()");
-#endif
-            // var harmonyUsers = Harmony.harmonyUsers;
             foreach (PluginInfo mod in Singleton<PluginManager>.instance.GetPluginsInfo())
             {
                 if (mod.isBuiltin)
@@ -256,32 +269,6 @@ namespace HarmonyMod
                     continue;
                 }
                 var modReport = GetReport(mod);
-#if false
-                var harmonyUsers = Harmony.harmonyUsers;
-                mod.GetAssemblies()
-                    .Exists((a) =>
-                    {
-#if HEAVY_TRACE
-                        LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO:     Check {a.GetName().FullName}");
-#endif
-                        if (harmonyUsers.TryGetValue(a.FullName, out var modStatus))
-                        {
-#if HEAVY_TRACE
-                            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO:        is user checkbeforeuse={modStatus.checkBeforeUse}");
-#endif
-                            if (!modStatus.checkBeforeUse && !modStatus.legacyCaller)
-                            {
-#if HEAVY_TRACE
-                                LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO:        reporting problem");
-#endif
-                                var ex = GetAPIMisuseException(a.GetName(), out var reason);
-                                modReport.ReportProblem(ModReport.ProblemType.GenericProblem, ex);
-                            }
-                            return true;
-                        }
-                        return false;
-                    });
-#endif
                 if (!showOnlyProblems || modReport.numProblems != 0)
                 {
                     totalProblems += modReport.numProblems;
@@ -417,27 +404,14 @@ namespace HarmonyMod
             SelfDiagnostics(self);
             Output(final, ReportFormat.PlainText, stepName);
             report = string.Empty;
-
-#if TRACE
-            if (final)
-            {
-                string users = string.Empty;
-                Harmony.harmonyUsers.Do((u) => {
-                    users += $"{ u.Key} : checksBeforeUse: { u.Value.checkBeforeUse} legacy: {u.Value.legacyCaller}, { u.Value.instancesCreated} instances\n";
-                });
-                Log($"[{Versioning.FULL_PACKAGE_NAME}] INFO - Harmony Users:\n{users}");
-            }
-#endif
         }
 
         internal void OnModListChanged(bool inGame)
         {
-            // HashSet<PluginInfo> addedMods = new HashSet<PluginInfo>();
 
             Singleton<PluginManager>.instance.GetPluginsInfo()
                 .Where((p) => !p.isBuiltin)
                 .Do((p) => {
-                    // addedMods.Add(p);
                     /* FIXME: Handle self-enabling mods, which enable themselves after this call.
                     * so this call is made with isEnabled=false, but later if the mod is removed
                     * the call is made with isEnabled=true
@@ -504,7 +478,6 @@ namespace HarmonyMod
                         ReportActivity($"Mod '{p.name}'" +
                             (inGame ? " was removed at " + meta.m_currentDateTime + (paused ? ", paused" : ", **running**")
                                 : string.Empty));
-//                        ReportActivity($"Mod '{p.name}'{(inGame ? " was removed at " + Singleton<SimulationManager>.instance.m_metaData.m_currentDateTime : string.Empty)}");
                     }
                 });
         }
@@ -520,10 +493,6 @@ namespace HarmonyMod
 
             void UpdateReport()
         {
-#if HEAVY_TRACE
-            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] INFO: Report.UpdateReport()");
-#endif
-
             if (reportPanel != null && reportPanel.component.isVisible)
             {
                 report = string.Empty;
@@ -603,31 +572,6 @@ namespace HarmonyMod
                             cancelButton.position = new Vector3(cpos.x + widthIncrease / 4, cpos.y, cpos.z);
                         }
                     }
-
-
-#if IMPLEMENTED_CUSTOM_ICON_ON_REPORT_PANEL
-                    if (Logo != null)
-                    {
-                        /* FIXME: How to display the logo image as a sprite on the report window?
-                         * If you know how, please tell me.
-                         */
-                        UITextureAtlas.SpriteInfo s = new UITextureAtlas.SpriteInfo();
-                        s.name = "HarmonyLogo";
-                        s.texture = Logo;
-                        s.region = new Rect(new Vector2(0, 0), new Vector2(Logo.width, Logo.height));
-
-                        sprite.atlas.AddSprite(s);
-                        sprite.spriteName = "HarmonyLogo";
-                    // string sprites = string.Empty;
-                    // int k = 0;
-                    // foreach (var i in summarySprite.atlas.spriteNames)
-                    // {
-                    //     sprites += $"{k,-4}: {i}\n";
-                    //     ++k;
-                    // }
-                    // Debug.LogError($"[{Versioning.FULL_PACKAGE_NAME}] sprite found {summarySprite.atlas.count} sprites:\n{sprites}");
-                }
-#endif
                     UpdateReport();
                 }
             }
@@ -694,6 +638,9 @@ namespace HarmonyMod
         {
             try
             {
+#if REPORT_AUTHORS
+                workshop.eventUGCRequestUGCDetailsCompleted -= AuthorNameCache;
+#endif
                 Singleton<PluginManager>.instance.eventPluginsChanged -= UpdateReport;
                 SceneManager.sceneLoaded -= OnScene;
 
@@ -726,8 +673,6 @@ namespace HarmonyMod
                                     if (optionsButton != null)
                                     {
                                         optionsButton.isVisible = false;
-                                        // optionsButton.isEnabled = false;
-                                        // optionsButton.Show();
                                         optionsButton.text = m_optionsButtonOriginalText;
                                         optionsButton.eventClick -= ShowReport;
                                         optionsButton.eventClick += entry.OpenOptions;
@@ -853,18 +798,12 @@ namespace HarmonyMod
                         optionsButton.isEnabled = true;
                         optionsButton.isVisible = true;
 
-                        // optionsButton.eventClick -= entry.OpenOptions;
                         optionsButton.eventClick -= entry.OpenOptions;
                         optionsButton.eventClick += ShowReport;
-#if HEAVY_TRACE
-                        LogError($"[{Versioning.FULL_PACKAGE_NAME}] del OpenOptions to {entry.pluginInfo.name}");
-#endif
                     }
                     else
                     {
                         optionsButton.text = m_optionsButtonOriginalText;
-                        // optionsButton.eventClick -= entry.OpenOptions;
-                        // optionsButton.eventClick += entry.OpenOptions;
                         optionsButton.eventClick -= ShowReport;
                     }
                 }
@@ -1051,13 +990,6 @@ namespace HarmonyMod
                 GetReport(Mod.mainMod).ReportProblem(ModReport.ProblemType.HelperNotLoadedFirst);
             }
 #endif
-#if DEBUG
-            LogError($"[{Versioning.FULL_PACKAGE_NAME}] SELF-ERROR - {Report.SelfProblemText(problem)}\n{ExMessage(e, true)}");
-            // Not implemented in mono for VS or dnspy
-            // System.Diagnostics.Debugger.Launch();
-            // System.Diagnostics.Debugger.Break();
-            DebugBreak();
-#endif
 
         }
 
@@ -1138,16 +1070,6 @@ namespace HarmonyMod
                     ReportUnsupportedHarmony(e as HarmonyModSupportException);
                     break;
                 }
-#if TRACE
-                else if (Patcher.isHarmonyUserException(e))
-                {
-                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception from patchset '{(e as HarmonyUserException)?.harmonyInstance?.Id}' ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
-                }
-                else
-                {
-                    LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING {(e == exception ? "Outer" : "Inner")} @{level} Exception ({e.GetType().Name}): {e.Message}:\n{e.StackTrace}");
-                }
-#endif
                 ++level;
                 if (firstFailureProblemCount != 0) continue;
 
@@ -1176,7 +1098,6 @@ namespace HarmonyMod
                             {
                                 if (!triggerIsFailure && (i == 0 || e is AssertionException))
                                 {
-                                    // var modReport = GetReport(mod);
                                     string desc;
                                     if (e is AssertionException)
                                     {
@@ -1190,7 +1111,6 @@ namespace HarmonyMod
                                     }
                                     n = GetReport(mod, ModReport.ProblemType.ExceptionThrown, e, desc); // @ {frame.GetFileName()} : {frame.GetFileLineNumber()}");
                                     failingMod = mod;
-                                    // done = true;
                                 }
                                 else
                                 {
@@ -1212,23 +1132,9 @@ namespace HarmonyMod
             if (triggeringMod != null)
             {
                 firstTriggerCount = GetReport(triggeringMod, ModReport.ProblemType.ExceptionTriggered, exception, triggerInfo);
-#if HEAVY_TRACE
-                triggerStr = $"; {firstTriggerCount} triggered so far by {triggeringMod.name}";
-#endif
                 if (triggerIsFailure)
                     firstFailureProblemCount = firstTriggerCount;
             }
-#if HEAVY_TRACE
-            string failStr = string.Empty;
-            if (failingMod != null)
-            {
-                failStr = $"{firstFailureProblemCount} failures shown so far by {failingMod.name}";
-            }
-
-            LogWarning($"[{Versioning.FULL_PACKAGE_NAME}] WARNING Exception will " +
-            $"{(firstFailureProblemCount <= MAX_EXCEPTION_PROMPTS_PER_MOD ? string.Empty : "not ")}be reported with a pop-up " +
-                $"({failStr}{triggerStr})");
-#endif
 
             return firstFailureProblemCount;
         }
@@ -1238,26 +1144,17 @@ namespace HarmonyMod
             PluginInfo origin = null;
             AssemblyName from = default(AssemblyName);
 
-            LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - FindCallerMod searches:\n{stackTrace.ToString()}");
-
             if (stackTrace.GetFrames().Any((x) =>
             {
-                // var allmods = (Singleton<PluginManager>.instance.GetPluginsInfo() ?? 
-                //     Enumerable.Empty<PluginInfo>())
-                //     .Concat(Singleton<PluginManager>.instance.GetCameraPluginInfos() ??
-                //     Enumerable.Empty<PluginInfo>());
                 var callerAssembly = x.GetMethod().ReflectedType.Assembly;
 
-                // var mod = allmods.FirstOrDefault((p) => p.ContainsAssembly(callerAssembly));
                 var mod = Mod.mainModInstance.report.m_Plugins.Values.FirstOrDefault((p) => p.ContainsAssembly(callerAssembly));
                 if (mod != null)
                 {
                     origin = mod;
                     from = callerAssembly.GetName();
-                    LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - FindCallerMod found: {x.GetMethod().FullDescription()}");
                     return true;
                 }
-                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - FindCallerMod did not find: {callerAssembly.GetName().FullName}");
                 return false;
             }))
             {
@@ -1270,26 +1167,6 @@ namespace HarmonyMod
 
             return origin;
         }
-
-#if TRACE
-        internal static PluginInfo FindCallOrigin(System.Diagnostics.StackTrace stackTrace)
-        {
-            PluginInfo origin = null;
-
-            stackTrace.GetFrames().ForEach((x) =>
-            {
-                /* FIXME: 
-                 * Use above concat code. FindPluginInfo only searches enabled plugins
-                 */
-                var mod = Singleton<PluginManager>.instance.FindPluginInfo(x.GetMethod().ReflectedType.Assembly);
-                if (mod != null)
-                {
-                    origin = mod;
-                }
-            });
-            return origin;
-        }
-#endif
 
         internal void ReportPlugin (PluginInfo plugin, ModReport.ProblemType problem, string detail = null)
         {
@@ -1311,20 +1188,6 @@ namespace HarmonyMod
                 TryReportPlugin(ex);
             }
         }
-#if TRACE
-        internal void ReportPlugin(ModReport.ProblemType problem, Exception ex, int skipframes, out AssemblyName guiltyMod, string detail = null)
-        {
-            var plugin = FindCallerMod(new System.Diagnostics.StackTrace(skipframes + 1, true), out guiltyMod);
-            if (plugin != null)
-                GetReport(plugin).ReportProblem(problem, ex, detail);
-            else
-            {
-                LogError($"[{Versioning.FULL_PACKAGE_NAME}] ERROR - no responsible mod found; detail: {Report.ExMessage(ex.InnerException, true, 1)}");
-                TryReportPlugin(ex);
-            }
-
-        }
-#endif
         internal void ReportPlugin(ModReport.ProblemType problem, Exception ex, int skipframes, out AssemblyName guiltyMod, AssemblyName assemblyName)
         {
             var plugin = FindCallerMod(new System.Diagnostics.StackTrace(skipframes + 1, true), out guiltyMod);
@@ -1440,7 +1303,7 @@ namespace HarmonyMod
         {
             reason = "CitiesHarmony.API misuse by " + caller.Name + "[" + caller.Version + "]";
             var ex = new HarmonyModACLException(reason + " is prohibited");
-            ex.HelpLink = "https://github.com/drok/Harmony-CitiesSkylines/issues/8";
+            ex.HelpLink = $"{Versioning.ISSUES_URL}/8";
             return ex;
         }
 
