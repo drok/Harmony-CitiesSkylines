@@ -184,7 +184,8 @@ namespace HarmonyMod
              */
             Version[] harmonyVersionSupport = new Version[]
             {
-                new Version(1, 0, 9, 1),
+                // new Version(1, 0, 9, 1), I don't have a transfer function ready for this,
+                // and I don't think it is in use anywhere.
                 new Version(1, 1, 0, 0),
                 new Version(1, 2, 0, 1),
                 new Version(2, 0, 0, 9),
