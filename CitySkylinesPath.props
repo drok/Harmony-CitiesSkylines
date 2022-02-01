@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+	<PropertyGroup>
+	<TargetSteamAppID>255710</TargetSteamAppID>
+	<TargetAppFolderName>Cities_Skylines</TargetAppFolderName>
+	<TargetWorkshopFileId>2399343344</TargetWorkshopFileId>
+
+    <SteamDir>$([MSBuild]::NormalizeDirectory($([MSBuild]::GetRegistryValue(`HKEY_LOCAL_MACHINE\SOFTWARE\Valve\Steam`, `InstallPath`))))</SteamDir>
+    <AppContainerLib>$([System.Text.RegularExpressions.Regex]::Match(
+			$([System.IO.File]::ReadAllText(`$(SteamDir)steamapps\libraryfolders.vdf`)),
+			`"path"\s*"([^"]*)"[^}]+"$(TargetSteamAppID)"[^}]+}`))</AppContainerLib>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(AppContainerLib)' != ''">
+    <SteamLibrary>$([MSBuild]::NormalizeDirectory($([System.Text.RegularExpressions.Regex]::Unescape(
+			$([System.Text.RegularExpressions.Regex]::Match($(AppContainerLib), `(?&lt;="path"\s*")[^"]+`
+			).Value)))\steamapps\))</SteamLibrary>
+    <AppInstallDir>$(SteamLibrary)common\$(TargetAppFolderName)\</AppInstallDir>
+	<WorkshopItemDir>$(SteamLibrary)workshop\content\$(TargetSteamAppID)\$(TargetWorkshopFileId)\</WorkshopItemDir>
+    <GameAssembliesLocation>$(AppInstallDir)Cities_Data\Managed\</GameAssembliesLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(AppContainerLib)' == ''">
+    <GameAssembliesLocation>C:\References\</GameAssembliesLocation>
+  </PropertyGroup>
+	<PropertyGroup>
+		<UnityPath>$([MSBuild]::GetRegistryValue(`HKEY_CURRENT_USER\Software\Unity Technologies\Installer\Unity`, `Location x64`))</UnityPath>
+		<UnityPath Condition="'$(UnityPath)' != ''">$([MSBuild]::NormalizeDirectory($(UnityPath))</UnityPath>
+		<ModDirectory Condition=" Exists('$(WorkshopItemDir)')">$(WorkshopItemDir)</ModDirectory>
+		<ModDirectory Condition="!Exists('$(WorkshopItemDir)')">$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(SolutionName)-$(Configuration)\</ModDirectory>
+	</PropertyGroup>
+
+</Project>

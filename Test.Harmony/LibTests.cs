@@ -17,7 +17,7 @@
  */
 using IAwareness;
 using System;
-#if API_1_0_3 || API_1_0_4 || API_1_0_5 || API_1_0_6 || API_2_0_0
+#if API_1_0_3 || API_1_0_4 || API_1_0_5 || API_1_0_6 || API_2_0_0 || API_2_1_0
 using CitiesHarmony.API;
 #else
 using HarmonyManager;
@@ -44,7 +44,7 @@ namespace HarmonyMod.Tests
     public class TesterMod : IUserMod {
         public string Name => "_Test.Harmony";
 
-#if API_1_0_3 || API_1_0_4 || API_1_0_5 || API_1_0_6 || API_2_0_0
+#if API_1_0_3 || API_1_0_4 || API_1_0_5 || API_1_0_6 || API_2_0_0 || API_2_1_0
         internal static string APINAME = typeof(HarmonyHelper).Assembly.GetName().Name + " " + typeof(HarmonyHelper).Assembly.GetName().Version;
 #else
         internal static string APINAME = typeof(Harmony).Assembly.GetName().Name + " " + typeof(Harmony).Assembly.GetName().Version;
@@ -52,9 +52,14 @@ namespace HarmonyMod.Tests
         public string Description => $"Test Harmony API \"{APINAME}\"";
 
         public void OnEnabled() {
-            Debug.LogError($"Running TesterMod.OnEnabled() {Assembly.GetExecutingAssembly().GetName().Version}");
 
-            TestRunner.Run();
+#if API_1_0_3 || API_1_0_4 || API_1_0_5 || API_1_0_6 || API_2_0_0 || API_2_1_0
+            Debug.LogError($"Running TesterMod.OnEnabled() {Assembly.GetExecutingAssembly().GetName().Version} using {typeof(HarmonyHelper).AssemblyQualifiedName}");
+            HarmonyHelper.DoOnHarmonyReady(TestRunner.Run);
+#else
+            Harmony.DoOnHarmonyReady(TestRunner.Run);
+            Debug.LogError($"Running TesterMod.OnEnabled() {Assembly.GetExecutingAssembly().GetName().Version} using {typeof(Harmony).AssemblyQualifiedName}");
+#endif
         }
 
         public void OnDisabled()

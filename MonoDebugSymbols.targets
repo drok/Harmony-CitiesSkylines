@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Generate Mono debug symbols -->
+  <Target Name="AfterCompile"
+		  Condition="'$(_DebugSymbolsProduced)' == 'true'"
+		  Inputs="$(IntermediateOutputPath)$(TargetName).dll;$(IntermediateOutputPath)$(TargetName).pdb"
+		  Outputs="$(IntermediateOutputPath)$(TargetName).dll.mdb">
+    <ItemGroup>
+	  <AddModules Include="$(IntermediateOutputPath)$(TargetName).dll.mdb" />
+      <FileWrites Include="$(IntermediateOutputPath)$(TargetName).dll.mdb" />
+    </ItemGroup>
+    <Exec Command="$(UnityPath)Editor\Data\MonoBleedingEdge\bin\mono.exe $(UnityPath)Editor\Data\MonoBleedingEdge\lib\mono\4.5\pdb2mdb.exe $(IntermediateOutputPath)$(TargetName).dll" />
+  </Target>
+</Project>

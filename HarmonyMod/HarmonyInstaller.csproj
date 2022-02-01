@@ -28,8 +28,13 @@
 		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
 		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
 		<UserSecretsId>631fdc66-d970-44a9-9df3-895a0745b50e</UserSecretsId>
-		<OutDir>bin\Installer\$(Configuration)\$(TargetFramework)</OutDir>
 	</PropertyGroup>
+	<Import Project="..\CitySkylinesReferences.props" />
+	<PropertyGroup>
+		<OutputPath>bin\$(Configuration)-NotUsed\</OutputPath>
+		<OutDir>$(ModDirectory)</OutDir>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<Compile Include="Source\Install.cs" />
 	</ItemGroup>
@@ -177,35 +182,6 @@
 		<!-- Gihub Release:
 			gh release create v2.2 - -title "Release no. 2.2" - -notes "4rd release" - -target maintenance-0.9 bin/Harmony-CitiesSkylines-Debug.zip\#"Mod Archive" bin/Thumbnail.png\#"Simple Thumbnail"
 	-->
-	<Target Name="DeployToModDirectory" AfterTargets="Build" Condition="'$(Configuration)'!='Developer'">
-	<PropertyGroup>
-		<SteamPath>~/Library/Application Support/Steam/</SteamPath>
-		<SteamPath Condition="! Exists ('$(SteamPath)')">$(ProgramFiles)\Steam</SteamPath>
-		<SteamPath Condition="! Exists ('$(SteamPath)')">$(Registry:HKEY_CURRENT_USER\Software\Valve\Steam@SteamPath)</SteamPath>
-		<CSPath>$(SteamPath)\steamapps\common\Cities_Skylines</CSPath>
-		<!-- If the mod author's CSL is installed in a place other than the default Steam library, you can add below the path to it -->
-		<CSPath Condition="!  Exists ('$(CSPath)')">F:\SteamLibrary\steamapps\common\Cities_Skylines</CSPath>
-		<!-- End Custom CSL Install path -->
-		<MangedDLLPath>$(CSPath)\Cities_Data\Managed</MangedDLLPath>
-		<MangedDLLPath Condition="!  Exists ('$(MangedDLLPath)')">..\dependencies</MangedDLLPath>
-		<UnityPath>$(MSBuildExtensionsPath64)\..\Unity\</UnityPath>
-		<!-- If the mod author's Unity is installed in other than the default locations, specify it below.
-			It is used to generate .mdb debug symbol files
-		-->
-		<UnityPath Condition="! Exists ('$(UnityPath)')">H:\Programs\Unity\</UnityPath>
-		<!-- End Custom Unity Install path -->
-		<UnityPath Condition="! Exists ('$(UnityPath)')">..\Unity\</UnityPath>
-		<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(ProjectName)-$(Configuration)\</ModDirectory>
-	</PropertyGroup>
-
-    <ItemGroup Condition="'$(Configuration)'!='Developer' and '$(Configuration)'!='Developer-Updater'">
-	  <ModFiles Include="$(TargetDir)*.dll" />
-      <ModFiles Include="$(TargetDir)*.dll.mdb" />
-      <ModFiles Include="$(TargetDir)*.dll.config" />
-    </ItemGroup>
-		<Exec Condition="'$(Configuration)'!='Release'" Command="$(UnityPath)Editor\Data\MonoBleedingEdge\bin\mono.exe $(UnityPath)Editor\Data\MonoBleedingEdge\lib\mono\4.5\pdb2mdb.exe $(TargetDir)$(TargetName).dll" />
-		<Message Text="Installing to Local Mod directory as $(SolutionName)-$(Configuration)" />
-    <!-- <RemoveDir Directories="$(ModDirectory)" /> -->
-    <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModDirectory)" />
-  </Target>
+	<!-- <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" /> -->
+	<Import Project="..\MonoDebugSymbols.targets" />
 </Project>

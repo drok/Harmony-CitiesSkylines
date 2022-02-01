@@ -6,7 +6,7 @@
     <AssemblyTitle>Test.Harmony</AssemblyTitle>
     <AssemblyVersion>1.0.*</AssemblyVersion>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <Configurations>API 0.9.0;API 1.0.3;API 1.0.4;API 1.0.5;API 1.0.6;API 2.0.0</Configurations>
+    <Configurations>API 0.9.0;API 1.0.3;API 1.0.4;API 1.0.5;API 1.0.6;API 2.0.0;API 2.1.0</Configurations>
   </PropertyGroup>
 	<PropertyGroup>
 		<DelaySign>false</DelaySign>

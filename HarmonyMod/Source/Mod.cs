@@ -281,6 +281,8 @@ namespace HarmonyMod
                     }
 #endif
 #endif
+                    (this as IAmAware).DoOnHarmonyReady(pendingCOCallbacks);
+                    pendingCOCallbacks.Clear();
                 }
             }
             catch (Exception ex)
@@ -336,7 +338,7 @@ namespace HarmonyMod
                     }
                     enabled = false;
                 }
-            }
+                }
             catch (Exception ex)
             {
                 SelfReport(SelfProblemType.FailedToUninstall, ex);
@@ -547,7 +549,7 @@ namespace HarmonyMod
                     IsTrue(main == handover.mainMod(),
                         "Notification of another Harmony mod being main should be accurate");
                 }
-            }
+                }
             catch (Exception ex)
             {
                 SelfReport(SelfProblemType.FailedToYieldToMain, ex);
@@ -763,6 +765,26 @@ namespace HarmonyMod
             return true;
         }
 
+        static List<ClientCallback> pendingCOCallbacks = new List<ClientCallback>();
+        /* FIXME: If Harmony is disabled, this will drop actions */
+        static public void DoColossalOnHarmonyReady(Action action)
+        {
+            pendingCOCallbacks.Add(new ClientCallback()
+            {
+                action = action,
+                callStack = new System.Diagnostics.StackTrace(2, true),
+            });
+#if HEAVY_TRACE
+            Log($"[{Versioning.FULL_PACKAGE_NAME}] Submit Colossal Harmony API callback via wrapper in Mod: {action.Method.FullDescription()}\n{new System.Diagnostics.StackTrace(1, true)}");
+#endif
+            if (mainModInstance != null)
+            {
+                (mainModInstance as IAmAware).DoOnHarmonyReady(pendingCOCallbacks);
+                pendingCOCallbacks.Clear();
+            }
+        }
+
+
         #endregion
 
 
@@ -782,7 +804,9 @@ namespace HarmonyMod
             {
                 if (plugin.assemblyCount != 0)
                 {
+#if DEBUG
                     Log($"[{Versioning.FULL_PACKAGE_NAME}] Enumerate plugin {(plugin != null ? plugin.name : "nul")}");
+#endif
                     // var refs = plugin.userModInstance.GetType().Assembly.GetReferencedAssemblies();
                     // mods += $"{plugin.name} - @ {plugin.modPath} - enabled={plugin.isEnabled} - {plugin.assembliesString} - {refs.Length} refs:\n";
                     // foreach (var r in refs)
