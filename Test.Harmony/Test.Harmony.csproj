@@ -27,7 +27,9 @@
 		<PackageReference Include="CitiesHarmony.API" Version="$(Configuration.Substring(3))" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\IAmAware\IAwareness0.csproj" />
+	  <ProjectReference Include="..\IAmAware\IAwareness0.csproj">
+	    <Private>false</Private>
+	  </ProjectReference>
 	</ItemGroup>
 
 	<ItemGroup>
