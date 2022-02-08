@@ -2,10 +2,10 @@
 	path = Harmony-v2
 	url = https://github.com/drok/Harmony
 	branch = maintenance-v2
-[submodule "Compat-CitiesHarmony.Harmony-2.0.4.0"]
-	path = Compat-CitiesHarmony.Harmony-2.0.4.0
+[submodule "Compat-CitiesHarmony.Harmony"]
+	path = Compat-CitiesHarmony.Harmony
 	url = https://github.com/drok/Harmony
-	branch = maintenance-CitiesHarmony.Harmony-2.0.4.0
+	branch = maintenance-CitiesHarmony.Harmony-2.2.0.0
 [submodule "MonoMod.Common"]
 	path = MonoMod.Common
 	url = https://github.com/drok/MonoMod.Common

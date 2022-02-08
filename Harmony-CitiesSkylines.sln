@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IAwareness0", "IAmAware\IAw
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Harmony-v2", "Harmony-v2\Harmony\Harmony-v2.csproj", "{608C45F0-E72F-4436-B9EA-4D108B42313B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compat-CitiesHarmony.Harmony-2.0.4.0", "Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\Compat-CitiesHarmony.Harmony-2.0.4.0.csproj", "{4F26A041-2AD5-4A91-93E7-8FA03EB456FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compat-CitiesHarmony.Harmony", "Compat-CitiesHarmony.Harmony\Harmony\Compat-CitiesHarmony.Harmony.csproj", "{4F26A041-2AD5-4A91-93E7-8FA03EB456FF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compat-CitiesHarmony-Mod", "Compat-CitiesHarmony-Mod\Compat-CitiesHarmony-Mod.csproj", "{D80AFD7C-CB94-4696-B1F8-6255A5B07FB0}"
 EndProject

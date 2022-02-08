@@ -126,7 +126,7 @@ compatibility management, exception management, etc</Description>
 		<CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>
 	-->
-    <ProjectReference Include="..\Compat-CitiesHarmony.Harmony-2.0.4.0\Harmony\Compat-CitiesHarmony.Harmony-2.0.4.0.csproj">
+    <ProjectReference Include="..\Compat-CitiesHarmony.Harmony\Harmony\Compat-CitiesHarmony.Harmony.csproj">
       <Aliases>HarmonyCHH2040</Aliases>
     </ProjectReference>
     <ProjectReference Include="..\Harmony-v2\Harmony\Harmony-v2.csproj">

@@ -93,8 +93,8 @@ namespace HarmonyMod
         };
         private static readonly HashSet<string> manifest = new HashSet<string>
         {
-            "0Harmony, Version=2.0.400.0",
-            "CitiesHarmony.Harmony, Version=2.0.400.0",
+            "0Harmony, Version=2.2.10000.0",
+            "CitiesHarmony.Harmony, Version=2.2.10000.0",
             "IAmAware, Version=0.0.1.0",
             "CitiesHarmony, Version=0.0.0.0",
             // "Mono.Cecil, Version=0.10.4.0",
