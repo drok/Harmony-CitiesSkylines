@@ -26,7 +26,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion(HarmonyManager.Versioning.MyFileVersion)]
 [assembly: AssemblyInformationalVersionAttribute("0.9.0")]
 #endif
-
+/*
+ * Simply subscribe the "[url=https://steamcommunity.com/sharedfiles/filedetails/?id=2747920739]Update from GitHub[/url]" mod or install as local mod from [url=https://github.com/drok/Harmony-CitiesSkylines/releases]GitHub release page[/url] to pick up the update. Version 1.0 contains Harmony 2.2 and the most recent bugfixes to the library, plus several improvements to Harmony Mod itself (new classes of errors reported). This update is only needed because mods on the workshop will soon be updated to require this version. It brings no user-visible changes. Sorry to push it, I was forced into it because CO raised the bar to this new version number.
+ */
 namespace HarmonyManager
 {
     internal static class Versioning

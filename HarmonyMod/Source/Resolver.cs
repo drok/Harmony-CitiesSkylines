@@ -83,7 +83,7 @@ namespace HarmonyMod
             var warn = resolved == null || found_by_exploit != null;
             if (resolved == null || found_by_exploit != null || CODebugBase<LogChannel>.verbose)
             {
-                var info = $"[{Versioning.FULL_PACKAGE_NAME}] {(warn ? "WARNING" : "INFO")}:- Assembly Resolve{source}:\n  Requested:     {args.Name}\n" +
+                var info = $"[{Versioning.FULL_PACKAGE_NAME}] {(warn ? "WARNING" : "INFO")}:- Assembly Resolve{source}:\n  Requested:   {args.Name}\n" +
                     $"  Resolved as: {(resolved != null ? resolved.GetName() : "not found")}\n" +
                     ((warn && CODebugBase<LogChannel>.verbose) ? $"From:\n{new System.Diagnostics.StackTrace(true)}\nPresent Assemblies:\n{AssemblyList()}" : string.Empty);
 

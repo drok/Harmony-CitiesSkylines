@@ -20,7 +20,8 @@ extern alias HarmonyCHH2040;
 
 using static UnityEngine.Debug;
 using static UnityEngine.Assertions.Assert;
-
+using System.Reflection;
+using System.Linq.Expressions;
 
 namespace HarmonyMod
 {
@@ -50,6 +51,10 @@ namespace HarmonyMod
         IAmAware self;
 
         internal static Dictionary<Version, Assembly> harmonyAssembly = new Dictionary<Version, Assembly>();
+        internal static List<Type> myLegacyHarmonies = new List<Type>();
+        internal static List<Assembly> myLegacyHarmonyMods = new List<Assembly>();
+        Version legacyHarmonyModVersion = new Version(1, 0, 1, 0);
+
 
         internal Patcher(IAmAware selfMod, string name, bool onAwarenessCallback = false)
         {
@@ -88,10 +93,16 @@ namespace HarmonyMod
             {
                 Harmony.awarenessInstance = self;
                 HarmonyCHH2040::HarmonyLib.Harmony.awarenessInstance = self;
+                foreach (var h in myLegacyHarmonies)
+                    h.GetField("awarenessInstance", BindingFlags.NonPublic | BindingFlags.Static)?.SetValue(null, self);
             }
             HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = true;
             if (!Harmony.harmonyUsers.ContainsKey(Assembly.GetExecutingAssembly().FullName)) {
                 Harmony.harmonyUsers[Assembly.GetExecutingAssembly().FullName] = new Harmony.HarmonyUser() { checkBeforeUse = true, legacyCaller = false, instancesCreated = 0, };
+            }
+            foreach (var h in myLegacyHarmonies)
+            {
+                h.GetProperty("isEnabled", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.SetProperty)?.SetValue(null, true, null);
             }
 
             return wasInitialized;
@@ -101,6 +112,10 @@ namespace HarmonyMod
         {
             Harmony.isEnabled = false;
             HarmonyCHH2040::HarmonyLib.Harmony.isEnabled = false;
+            foreach (var h in myLegacyHarmonies)
+            {
+                h.GetProperty("isEnabled", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.SetProperty)?.SetValue(null, false, null);
+            }
         }
 
         internal bool Install()
@@ -211,7 +226,8 @@ namespace HarmonyMod
                 .Do((assembly) =>
                 {
                     var your = assembly.GetName();
-                    if (your.Name == "0Harmony" && 
+
+                    if (your.Name == "0Harmony" &&
                         (your.GetPublicKeyToken() == null ||
                         !your.GetPublicKeyToken().SequenceEqual(Assembly.GetExecutingAssembly().GetName().GetPublicKeyToken())))
                     {
@@ -238,6 +254,24 @@ namespace HarmonyMod
                              * TODO: Disable mods that try.
                              */
                             unsupportedAssemblies.Add(new HarmonyModSupportException.UnsupportedAssembly(assembly, false));
+                        }
+                    }
+                    else if (your.Name == "0Harmony" || your.Name == "CitiesHarmony.Harmony")
+                    {
+                        if (assembly != typeof(Harmony2::HarmonyLib.Harmony).Assembly &&
+                        assembly != typeof(HarmonyCHH2040::HarmonyLib.Harmony).Assembly &&
+                        your.GetPublicKeyToken().SequenceEqual(Assembly.GetExecutingAssembly().GetName().GetPublicKeyToken()))
+                        {
+                            if (assembly.GetType("HarmonyLib.Harmony") is Type harmonyType)
+                                myLegacyHarmonies.Add(harmonyType);
+                        }
+                    }
+                    else if (your.Name == "HarmonyMod")
+                    {
+                        if (your.Version < legacyHarmonyModVersion &&
+                            your.GetPublicKeyToken().SequenceEqual(Assembly.GetExecutingAssembly().GetName().GetPublicKeyToken()))
+                        {
+                            myLegacyHarmonyMods.Add(assembly);
                         }
                     }
                 });
