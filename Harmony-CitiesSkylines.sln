@@ -24,6 +24,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoMod.Common", "MonoMod.C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1CC609CD-2218-4587-9449-3B268233A152}"
 	ProjectSection(SolutionItems) = preProject
+		CitySkylinesPath.props = CitySkylinesPath.props
+		CitySkylinesReferences.props = CitySkylinesReferences.props
+		MonoDebugSymbols.targets = MonoDebugSymbols.targets
 		MonoMod.Common.props = MonoMod.Common.props
 	EndProjectSection
 EndProject
@@ -55,6 +58,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.Target.Net4", "BadMods\Test.Target.Net4.Core\Test.Target.Net4.csproj", "{59543916-F7C6-4AF3-85D5-E5FA53A266FE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compat-CitiesHarmony.API", "Compat-CitiesHarmony.API\Compat-CitiesHarmony.API.csproj", "{00B9E62A-CC2C-438D-9E21-F9958BE9C1D7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpdateFromGitHub", "HarmonyMod\UpdateFromGitHub.csproj", "{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -377,6 +382,32 @@ Global
 		{00B9E62A-CC2C-438D-9E21-F9958BE9C1D7}.Test API 2.0.0|Any CPU.Build.0 = Debug|Any CPU
 		{00B9E62A-CC2C-438D-9E21-F9958BE9C1D7}.Test API 2.1.0|Any CPU.ActiveCfg = Debug|Any CPU
 		{00B9E62A-CC2C-438D-9E21-F9958BE9C1D7}.Test API 2.1.0|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Beta|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Beta|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Developer|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Developer|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Developer-Updater|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Developer-Updater|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.ReleaseTrace|Any CPU.ActiveCfg = Release|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.ReleaseTrace|Any CPU.Build.0 = Release|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 0.9.0|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 0.9.0|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.3|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.3|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.4|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.4|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.5|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.5|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.6|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 1.0.6|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 2.0.0|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 2.0.0|Any CPU.Build.0 = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 2.1.0|Any CPU.ActiveCfg = Debug|Any CPU
+		{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}.Test API 2.1.0|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

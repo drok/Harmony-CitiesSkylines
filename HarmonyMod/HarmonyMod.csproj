@@ -45,6 +45,8 @@ compatibility management, exception management, etc</Description>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="Source\Install.cs" />
+		<Compile Remove="Source\UpdateFromGitHub.cs" />
+		<Compile Remove="Source\Item\WorkshopItem.cs" />
 	</ItemGroup>
 	
 	<ItemGroup>

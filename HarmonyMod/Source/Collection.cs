@@ -21,9 +21,15 @@ using System.IO;
 using System.Globalization;
 using ColossalFramework;
 using ColossalFramework.IO;
+using ColossalFramework.PlatformServices;
 using static Json.NETMF.JsonSerializer;
 using static Json.NETMF.JsonParser;
 using GitHub;
+#if UPDATER
+using UpdateFromGitHub;
+#elif INSTALLER
+using HarmonyInstaller;
+#endif
 #if TRACE || INSTALLER
 using static UnityEngine.Debug;
 #endif
@@ -67,7 +73,7 @@ namespace HarmonyMod
 		/// <returns>UnknownRelease if the requested version is not in the repo, or if update was requested
 		/// OK if a matching version was found.
 		/// NeedAssets if the requested release is known, but it's missing the assets</returns>
-		public CheckoutResult PrepareToDownload(GitHubRelease item, bool update, out Hashtable release)
+		public CheckoutResult PrepareToDownload(Loaded mod, GitHubRelease item, bool update, out Hashtable release)
 		{
 			if (!update && item.Latest.value != string.Empty)
 			{
@@ -87,32 +93,9 @@ namespace HarmonyMod
 					else
 					{
 						release = data[_Item.RELEASE_DATA_ID_RELEASE] as Hashtable;
+						string installedFlag = Path.Combine(mod.orig.modPath, $".ghrel-{release[_GitHubRelease.REL_ID]}");
 
-						SavedString installed = new SavedString(item.myItemBranch + "/installed", Settings.userGameState, string.Empty, true);
-
-						string availableRelease = item.branch + "/" + release[_GitHubRelease.REL_TAG_NAME];
-
-#if INSTALLER
-						/* forget what was installed, install something new.
-						 * This clears "stuck" when the installed marker is different
-						 * than what's on disk.
-						 * 
-						 * If the latest, full mod is on disk, but the user overwrites it with
-						 * the installer file manually, the installer should clear the flag
-						 * so the full mod can be re-downloaded.
-						 * 
-						 * There is no download loop because the installer downloads
-						 * the "Full Harmony Mod" package, while the API downloads
-						 * "Installer Only"
-						 * download loop when the tip of the branch is an installer.
-						 */
-						var result = CheckoutResult.NeedAssets;
-						installed.Delete();
-#else
-						var result = (installed.value == availableRelease) ? CheckoutResult.OK :
-							CheckoutResult.NeedAssets;
-#endif
-						return result;
+						return File.Exists(installedFlag) ? CheckoutResult.OK : CheckoutResult.NeedAssets;
 					}
 				}
 				else
@@ -123,6 +106,13 @@ namespace HarmonyMod
 			}
 			return CheckoutResult.UnknownRelease;
 		}
+		void Touch(string fileName)
+        {
+			if (!File.Exists(fileName))
+				File.Create(fileName).Close();
+
+			File.SetLastWriteTimeUtc(fileName, DateTime.UtcNow);
+		}
 
 		public bool StoreGithubReleaseInfo(IEnumerable releases, GitHubRelease item)
 		{
@@ -131,6 +121,7 @@ namespace HarmonyMod
 				SavedString repoUpdated = new SavedString(item.myItemBranch + "/updated", Settings.userGameState, string.Empty, true);
 				DateTimeOffset lastRepoUpdate = (repoUpdated.value != string.Empty) ?
 					DateTimeOffset.Parse(repoUpdated.value) : default(DateTimeOffset);
+
 				foreach (Hashtable release in releases)
 				{
 					var branch = release[_GitHubRelease.REL_TARGET] as string;
@@ -178,15 +169,34 @@ namespace HarmonyMod
 				return complete;
 			}
 		}
-	
+
 		public bool OnSuccessfulDownload(Loaded mod, Item item, Hashtable release, DownloadState dl)
 		{
 			var modHome = mod.orig.modPath;
 			bool needsBackup = Directory.Exists(modHome);
 			bool failed = false;
-			var bakdir = dl.destDir + ".bak";
+			string bakdir;
+			if (mod.orig.publishedFileID != PublishedFileId.invalid)
+				bakdir = modHome + ".bak";
+			else
+				bakdir = dl.destDir + ".bak";
+
 			if (needsBackup)
 			{
+#if INSTALLER
+				if (mod.orig == Mod.mainMod)
+                {
+					try
+					{
+						if (Directory.Exists(bakdir))
+							Directory.Delete(bakdir, true);
+					} catch (Exception ex)
+                    {
+						LogError($"[{Versioning.FULL_PACKAGE_NAME}] Failed to reserve backup dir '{bakdir}': {ex.Message}");
+					}
+				}
+#endif
+				LogError($"[{Versioning.FULL_PACKAGE_NAME}] Moving '{modHome}' to '{bakdir}'");
 				try { Directory.Move(modHome, bakdir); }
 				catch (Exception ex) {
 #if INSTALLER
@@ -202,8 +212,7 @@ namespace HarmonyMod
 			{
 				try {
 					Directory.Move(dl.destDir, modHome);
-					SavedString installed = new SavedString(item.myItemBranch + "/installed", Settings.userGameState, string.Empty, true);
-					installed.value = item.branch + "/" + (release[_GitHubRelease.REL_TAG_NAME] as string);
+					Touch(Path.Combine(modHome, $".ghrel-{release[_GitHubRelease.REL_ID]}"));
 				}
 				catch (Exception ex) {
 #if INSTALLER

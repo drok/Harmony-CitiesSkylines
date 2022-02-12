@@ -82,8 +82,6 @@ namespace HarmonyManager
 #endif
         public void Awake()
         {
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] InstallerLite.Awake() at \n{new System.Diagnostics.StackTrace(true)}");
-
             var unitySdk =
                 Path.Combine(
                     Path.Combine(
@@ -92,7 +90,6 @@ namespace HarmonyManager
                             "lib"),
                         "mono"),
                     "unity");
-            Log($"[{Versioning.FULL_PACKAGE_NAME}] Installer.Awake() will load I18N form {unitySdk}");
 
             Assembly.LoadFrom(Path.Combine(unitySdk, "I18N.dll"));
             Assembly.LoadFrom(Path.Combine(unitySdk, "I18N.West.dll"));

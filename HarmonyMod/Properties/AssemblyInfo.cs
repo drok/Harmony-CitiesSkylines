@@ -19,7 +19,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("Radu Hociung")]
 [assembly: System.Reflection.AssemblyProductAttribute("Modding Infrastructure")]
-[assembly: System.Reflection.AssemblyTitleAttribute("Harmony Mod for Cities Skylines")]
+[assembly: System.Reflection.AssemblyTitleAttribute(HarmonyMod.Versioning.PACKAGE_NAME)]
 
 /* Allow integration tests unrestricted access for testing */
 [assembly: InternalsVisibleTo("Test.Harmony, PublicKey=" +

@@ -157,6 +157,13 @@ namespace HarmonyMod
             var slash = uri.Segments[i].IndexOf('/');
             return slash != -1 ? uri.Segments[i].Remove(slash) : uri.Segments[i];
         }
+        protected string UriQuery(Uri uri, int i)
+        {
+            if (string.IsNullOrEmpty(uri.Query))
+                return null;
+            var queries = uri.Query.Substring(1).Split(new char[] { ',' });
+            return queries.Length-1 >= i ? queries[i] : null;
+        }
 
         public abstract override string ToString();
 

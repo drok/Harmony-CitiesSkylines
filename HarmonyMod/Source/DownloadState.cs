@@ -19,7 +19,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using static UnityEngine.Debug;
-#if INSTALLER
+#if UPDATER
+using UpdateFromGitHub;
+#elif INSTALLER
 using HarmonyInstaller;
 #endif
 

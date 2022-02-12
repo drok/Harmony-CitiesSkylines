@@ -28,7 +28,9 @@ using ColossalFramework;
 using ColossalFramework.Plugins;
 using ColossalFramework.IO;
 using Priority_Queue;
-#if INSTALLER
+#if UPDATER
+using UpdateFromGitHub;
+#elif INSTALLER
 using HarmonyInstaller;
 #endif
 
@@ -88,7 +90,7 @@ namespace HarmonyMod
         static public YieldInstruction saveError = new DownloadError("Saving failed (disk full or permissions?)");
         static public YieldInstruction downloadError = new DownloadError("Downloading failed");
         static public YieldInstruction notFound = new DownloadError("Not Found");
-        static public YieldInstruction branchNotFound = new DownloadError("Release channel no longer exists");
+        static public YieldInstruction branchNotFound = new DownloadError("Release channel does not exist");
         static public YieldInstruction notModified = new DownloadError("No new releases");
         static public YieldInstruction repoDoesNotExist = new DownloadError("Repository does not exist");
         static public YieldInstruction releaseDoesNotExist = new DownloadError("Release does not exist");
@@ -235,7 +237,7 @@ namespace HarmonyMod
                     continue;
                 }
 #if INSTALLER
-                HarmonyInstaller.Mod.Deactivate();
+                Mod.Deactivate();
 #endif
                 break;
             }

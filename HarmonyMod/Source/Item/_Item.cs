@@ -20,6 +20,8 @@ namespace HarmonyMod
     internal static class _Item
     {
         public const string PROVENANCE_TYPEID_GITHUB = "G";
+        public const string PROVENANCE_TYPEID_STEAM = "S";
+
 
         /* top level elements in the package release Hashtable */
         public const string RELEASE_DATA_ID_VERSION = "v";

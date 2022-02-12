@@ -9,7 +9,7 @@
 	If the existing Harmony is outdated, it is upgraded from GitHub releases.
 	</Description>
     <Copyright>Copyright 2021 Radu Hociung</Copyright>
-    <Version>0.9.0-rc010</Version>
+    <Version>0.9.0</Version>
     <Authors>Radu Hociung</Authors>
     <PackageId>Harmony-CitiesSkylines</PackageId>
     <PackageProjectUrl>https://github.com/drok/Harmony-CitiesSkylines</PackageProjectUrl>

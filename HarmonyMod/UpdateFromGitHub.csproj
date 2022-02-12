@@ -1,0 +1,190 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" DefaultTargets="Build">
+  <PropertyGroup>
+    <ProjectGuid>{44B9DD7D-DCF8-4915-A9D7-BDCD17897887}</ProjectGuid>
+    <TargetFramework>net35</TargetFramework>
+    <Deterministic>false</Deterministic>
+    <AssemblyTitle>Update From GitHub</AssemblyTitle>
+	  <Configurations>Debug;Release</Configurations>
+
+		<GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+		<GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+		<GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+		<GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+		<GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+		<GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+		<AssemblyName>UpdateFromGitHub</AssemblyName>
+		<Authors>Radu Hociung</Authors>
+		<Description>This mod for Cities Skylines enables mods and assets to be published on, and be updated in game directly from GitHub</Description>
+		<Copyright>2022</Copyright>
+		<RepositoryUrl>https://github.com/drok/Harmony-CitiesSkylines</RepositoryUrl>
+	  <LangVersion>latest</LangVersion>
+	  <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+	  <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+	<PropertyGroup>
+		<DelaySign>false</DelaySign>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>Properties\StrongName.pfx</AssemblyOriginatorKeyFile>
+		<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+		<UserSecretsId>631fdc66-d970-44a9-9df3-895a0745b50e</UserSecretsId>
+	</PropertyGroup>
+	<Import Project="..\CitySkylinesReferences.props" />
+	<PropertyGroup>
+		<!-- <ModDirectory Condition=" Exists('$(WorkshopItemDir)')">$(WorkshopItemDir)</ModDirectory>
+		<ModDirectory Condition="!Exists('$(WorkshopItemDir)')">$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(AssemblyName)-$(Configuration)\</ModDirectory>
+		-->
+		<ModDirectory>$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(AssemblyName)-$(Configuration)\</ModDirectory>
+		<OutputPath>bin\$(Configuration)-NotUsed\</OutputPath>
+		<OutDir>$(ModDirectory)</OutDir>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="Source\UpdateFromGitHub.cs" />
+	</ItemGroup>
+	<ItemGroup>
+
+		<Compile Include="Properties\AssemblyInfo.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\IPriorityQueue.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\IFixedSizePriorityQueue.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\GenericPriorityQueue.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\GenericPriorityQueueNode.cs" />
+		<Compile Include="Priority-Queue\Priority Queue\SimplePriorityQueue.cs" />
+
+		<Compile Include="Json.NetMF\source\Json.NetMF\JsonParser.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\JsonSerializer.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\NumberExtensions.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\StringExtensions.cs" />
+		<Compile Include="Json.NetMF\source\Json.NetMF\DateTimeExtensions.cs" />
+
+		<Compile Include="Properties\Versioning.cs" />
+		<Compile Include="Source\Item\_Item.cs" />
+		<Compile Include="Source\Item\Item.cs" />
+		<Compile Include="Source\Item\_GitHubRelease.cs" />
+		<Compile Include="Source\Item\GitHubRelease.cs" />
+		<Compile Include="Source\PluginManager\Loaded.cs" />
+		<Compile Include="Source\Epoch.cs" />
+		<Compile Include="Source\Collection.cs" />
+		<Compile Include="Source\Downloadable.cs" />
+		<Compile Include="Source\DownloadManager.cs" />
+		<Compile Include="Source\DownloadState.cs" />
+		<Compile Include="Source\IReleaseInfo.cs" />
+		<Compile Include="Source\RetryWait.cs" />
+		<Compile Include="Source\Zip.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Json.NetMF\nuspec\**" />
+	  <Compile Remove="Json.NetMF\source\Json.NetMF\Properties\**" />
+	  <Compile Remove="Json.NetMF\source\nanoFramework.Json\**" />
+	  <Compile Remove="Json.NetMF\source\Test\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Benchmarks\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Example\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Net Standard\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue PCL\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Tests\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Unity Full\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue Unity Subset\**" />
+	  <Compile Remove="Priority-Queue\Priority Queue\Properties\**" />
+	  <EmbeddedResource Remove="Json.NetMF\nuspec\**" />
+	  <EmbeddedResource Remove="Json.NetMF\source\Json.NetMF\Properties\**" />
+	  <EmbeddedResource Remove="Json.NetMF\source\nanoFramework.Json\**" />
+	  <EmbeddedResource Remove="Json.NetMF\source\Test\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Benchmarks\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Example\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Net Standard\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue PCL\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Tests\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Unity Full\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue Unity Subset\**" />
+	  <EmbeddedResource Remove="Priority-Queue\Priority Queue\Properties\**" />
+	  <None Remove="Json.NetMF\nuspec\**" />
+	  <None Remove="Json.NetMF\source\Json.NetMF\Properties\**" />
+	  <None Remove="Json.NetMF\source\nanoFramework.Json\**" />
+	  <None Remove="Json.NetMF\source\Test\**" />
+	  <None Remove="Priority-Queue\Priority Queue Benchmarks\**" />
+	  <None Remove="Priority-Queue\Priority Queue Example\**" />
+	  <None Remove="Priority-Queue\Priority Queue Net Standard\**" />
+	  <None Remove="Priority-Queue\Priority Queue PCL\**" />
+	  <None Remove="Priority-Queue\Priority Queue Tests\**" />
+	  <None Remove="Priority-Queue\Priority Queue Unity Full\**" />
+	  <None Remove="Priority-Queue\Priority Queue Unity Subset\**" />
+	  <None Remove="Priority-Queue\Priority Queue\Properties\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Priority-Queue\Priority Queue\FastPriorityQueue.cs" />
+	  <Compile Remove="Priority-Queue\Priority Queue\FastPriorityQueueNode.cs" />
+	  <Compile Remove="Priority-Queue\Priority Queue\StablePriorityQueue.cs" />
+	  <Compile Remove="Priority-Queue\Priority Queue\StablePriorityQueueNode.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="Json.NetMF\.git" />
+	  <None Remove="Json.NetMF\.gitattributes" />
+	  <None Remove="Json.NetMF\.gitignore" />
+	  <None Remove="Json.NetMF\azure-pipelines.yml" />
+	  <None Remove="Json.NetMF\CODE_OF_CONDUCT.md" />
+	  <None Remove="Json.NetMF\LICENSE" />
+	  <None Remove="Json.NetMF\README.md" />
+	  <None Remove="Json.NetMF\source\Json.NetMF\packages.config" />
+	  <None Remove="Json.NetMF\source\NuGet.Config" />
+	  <None Remove="Json.NetMF\source\version.json" />
+	  <None Remove="Priority-Queue\.git" />
+	  <None Remove="Priority-Queue\.gitignore" />
+	  <None Remove="Priority-Queue\LICENSE.txt" />
+	  <None Remove="Priority-Queue\Priority Queue\packages.config" />
+	  <None Remove="Priority-Queue\Priority Queue\Priority Queue.nuspec" />
+	  <None Remove="Priority-Queue\Priority Queue\Priority Queue.snk" />
+	  <None Remove="Priority-Queue\README.md" />
+	  <None Remove="Resources\HarmonyMod-0.9.0.1.dll" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>C:\References\Assembly-CSharp.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="ColossalManaged">
+      <HintPath>C:\References\ColossalManaged.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ICities">
+      <HintPath>C:\References\ICities.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>C:\References\ICSharpCode.SharpZipLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>C:\References\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<WarningsAsErrors>;NU1605</WarningsAsErrors>
+		<DefineConstants>UPDATER;INSTALLER;TRACE;DEBUG;HEAVY_TRACE</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='DebugRetries'">
+		<Optimize>false</Optimize>
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<WarningsAsErrors>;NU1605</WarningsAsErrors>
+		<DefineConstants>UPDATER;INSTALLER;TRACE;DEBUG;HEAVY_TRACE;SIMULATE_NETWORK_FAILURES</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<Optimize>true</Optimize>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<DefineConstants>UPDATER;INSTALLER</DefineConstants>
+	</PropertyGroup>
+
+		<!-- Gihub Release:
+			gh release create v2.2 - -title "Release no. 2.2" - -notes "4rd release" - -target maintenance-0.9 bin/Harmony-CitiesSkylines-Debug.zip\#"Mod Archive" bin/Thumbnail.png\#"Simple Thumbnail"
+	-->
+	<!-- <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" /> -->
+	<Import Project="..\MonoDebugSymbols.targets" />
+</Project>

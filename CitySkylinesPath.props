@@ -26,7 +26,7 @@
 		<UnityPath>$([MSBuild]::GetRegistryValue(`HKEY_CURRENT_USER\Software\Unity Technologies\Installer\Unity`, `Location x64`))</UnityPath>
 		<UnityPath Condition="'$(UnityPath)' != ''">$([MSBuild]::NormalizeDirectory($(UnityPath))</UnityPath>
 		<ModDirectory Condition=" Exists('$(WorkshopItemDir)')">$(WorkshopItemDir)</ModDirectory>
-		<ModDirectory Condition="!Exists('$(WorkshopItemDir)')">$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(SolutionName)-$(Configuration)\</ModDirectory>
+		<ModDirectory Condition="!Exists('$(WorkshopItemDir)')">$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(ProjectName)-$(Configuration)\</ModDirectory>
 	</PropertyGroup>
 
 </Project>

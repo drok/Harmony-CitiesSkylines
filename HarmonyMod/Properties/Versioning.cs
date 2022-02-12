@@ -30,21 +30,36 @@ namespace HarmonyMod
         public const uint StorageVersion = 1;
         public const string MyAssemblyVersion = "1.0.1." + ReleaseStr + ReleaseTypeStr;
         public const string MyFileVersion = "1.0";
-#if INSTALLER
+#if UPDATER
+        public const string PACKAGE_NAME = "Update from GitHub";
+#elif INSTALLER
         public const string PACKAGE_NAME = "Harmony Installer";
 #else
         public const string PACKAGE_NAME = "Harmony";
 #endif
+#if UPDATER
+        public const string INSTALL_FILENAME = "UpdateFromGitHub";
+        public const string INSTALL_FILENAME_2399343344 = "HarmonyMod";
+#else
         public const string INSTALL_FILENAME = "HarmonyMod";
+#endif
 #if DEBUG
-        public const string PUBLISH_URL = "https://github.com/drok/reltest";
+        public const string PUBLISH_URL = "https://github.com/drok/Harmony-CitiesSkylines";
+        // public const string PUBLISH_URL = "https://github.com/drok/reltest";
 #else
         public const string PUBLISH_URL = "https://github.com/drok/Harmony-CitiesSkylines";
 #endif
         public const string ISSUES_URL = PUBLISH_URL + "/issues";
+#if UPDATER
+        public const string RELEASE_BRANCH = "UpdateFromGitHub-1.0";
+        public const string RELEASE_BRANCH_2399343344 = "maintenance-1.0";
+#else
         public const string RELEASE_BRANCH = "maintenance-1.0";
+#endif
 
 
+
+#if !UPDATER && !INSTALLER
         public struct Obsolescence
         {
             /* Versions at which various features will be disabled.
@@ -73,6 +88,7 @@ namespace HarmonyMod
 
 
         }
+#endif
 
         public static string VersionString(uint number)
         {
@@ -83,6 +99,7 @@ namespace HarmonyMod
                 (int)(number & 0xff)).ToString();
         }
 
+#if !INSTALLER
         public static bool IsObsolete(uint ver, string explanation)
         {
             bool obsolete = ImplementationVersion >= ver;
@@ -92,6 +109,7 @@ namespace HarmonyMod
             }
             return obsolete;
         }
+#endif
 
         public const string MyInformationalVersion = MyFileVersion + POSTFIX;
         public const string FULL_PACKAGE_NAME = PACKAGE_NAME + " " + MyInformationalVersion;
